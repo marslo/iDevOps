@@ -17,18 +17,31 @@ JAVA_ARGS=" \
 -Xmx10240m \
 -XX:PermSize=512m \
 -XX:MaxPermSize=10240m \
--Dhttp.nonProxyHosts=my.host.com \
--Dhttps.nonProxyHosts=my.host.com \
+-Dhttp.nonProxyHosts=blackduck.philips.com \
+-Dhttps.nonProxyHosts=blackduck.philips.com \
 -Dfile.encoding=UTF-8 \
 -Dsun.jnu.encoding=utf-8 \
 -Djavax.net.ssl.keyStore=/opt/java/jdk1.8.0_131/jre/lib/security/cacerts \
--Djavax.net.ssl.keyStorePassword=guessit \
+-Djavax.net.ssl.keyStorePassword=changeit \
 -Djavax.net.ssl.trustStore=/opt/java/jdk1.8.0_131/jre/lib/security/cacerts \
--Djavax.net.ssl.trustStorePassword=guessit \
--Dhudson.footerURL=\"http://my.jenkins.com\" \
+-Djavax.net.ssl.trustStorePassword=changeit \
+-Dhudson.footerURL=\"http://pww.jenkins.cdi.philips.com\" \
 -Dhudson.model.DirectoryBrowserSupport.CSP=\"sandbox allow-scripts; default-src 'none'; img-src 'self' data: ; style-src 'self' 'unsafe-inline' data: ; script-src 'self' 'unsafe-inline' 'unsafe-eval' ;\" \
+-Djenkins.security.ClassFilterImpl.SUPPRESS_WHITELIST=true \
 "
+
 # -Dhudson.model.DirectoryBrowserSupport.CSP=false \
+# -Dhudson.model.DirectoryBrowserSupport.CSP=\"sandbox allow-scripts allow-same-origin; default-src 'none'; img-src 'self' data: ; style-src 'self' 'unsafe-inline' data: ; script-src 'self' 'unsafe-inline' 'unsafe-eval' ;\" \
+
+# -Djavax.net.ssl.keyStore=/opt/java/jdk1.8.0_131/jre/lib/security/jssecacerts \
+# -Djavax.net.ssl.keyStorePassword=changeit \
+# -Djavax.net.ssl.trustStore=/opt/java/jdk1.8.0_131/jre/lib/security/jssecacerts \
+
+
+# JAVA_ARGS="-Djava.awt.headless=true -Xms512m -Xmx10240m -XX:PermSize=512m -XX:MaxPermSize=10240m -Dhttp.nonProxyHosts=blackduck.philips.com,fortify.philips.com -Dfile.encoding=UTF-8 -Dsun.jnu.encoding=utf-8 -Djavax.net.ssl.trustStore=$JAVA_HOME/jre/lib/security/cacerts -Djavax.net.ssl.keyStore=$JAVA_HOME/jre/lib/security/jssecacerts -Djavax.net.ssl.keyStorePassword=changeit"
+# JAVA_ARGS="-Djava.awt.headless=true -Xms512m -Xmx10240m -XX:PermSize=512m -XX:MaxPermSize=10240m -Dhttp.nonProxyHosts=localhost|127.*|[::1]|161.85.30.130"
+
+#JAVA_ARGS="-Xmx256m"
 
 # make jenkins listen on IPv4 address
 #:JAVA_ARGS="-Djava.net.preferIPv4Stack=true"
@@ -95,5 +108,6 @@ PREFIX=/$NAME
 # --prefix=$PREFIX
 
 JENKINS_ARGS="--webroot=/var/cache/$NAME/war --httpPort=$HTTP_PORT"
+JENKINS_JAVA_OPTIONS="-Dhudson.model.DirectoryBrowserSupport.CSP= "
 # JENKINS_ARGS="-hudson.model.DirectoryBrowserSupport.CSP= --webroot=/var/cache/$NAME/war --httpPort=$HTTP_PORT"
-# JENKINS_JAVA_OPTIONS="-Djava.awt.headless=true -Xms512m -Xmx10240m -XX:PermSize=512m -XX:MaxPermSize=10240m -Dhudson.security.csrf.requestfield=crumb -Dhudson.model.DirectoryBrowserSupport.CSP="
+# JENKINS_JAVA_OPTIONS="-Djava.awt.headless=true -Xms512m -Xmx10240m -XX:PermSize=512m -XX:MaxPermSize=10240m -Dhudson.security.csrf.requestfield=crumb"
