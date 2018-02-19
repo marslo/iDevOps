@@ -1,0 +1,57 @@
+# ok /not really/
+ok /^javadoc:/
+ok /^│/
+ok /--/
+ok /string/
+ok /GCDWebServer/
+ok /HttpResponse/
+ok /generated/
+ok /Time elapsed/
+ok /: 0/
+ok /LoginProvider/
+ok /CheckProgram/
+ok /http-/
+ok /npm verb/
+ok /-ex/
+ok /node_modules/
+ok /npmjs/
+ok /info/
+ok /network-/
+ok /registry.npm.taobao.org/
+
+# list of warnings here...
+warning /[Ww]arning/
+warning /WARNING/
+warning /WARN/
+warning /warning/
+
+# create a quick access link to lines in the report containing 'INFO'
+# info /jenkins_envinject.sh/
+info /env\/jenkins_envinject.sh/
+info /INFO/
+info /Cloning the remote Git repository/
+info /BUILD SUCCESSFUL/
+info /EXPORT SUCCEEDED/
+info /ARCHIVE SUCCEEDED/
+info /CLEAN SUCCEEDED/
+info /updateGitlabCommitStatus/
+info /> cordova/
+info /npm info ok/
+info /[Pipeline] stage/
+
+# each line containing 'BUILD' represents the start of a section for grouping errors and warnings found after the line.
+# also creates a quick access link.
+# start /BUILD/
+start /jenkins_envinject.sh/
+
+
+# match line starting with 'error ', case-insensitive
+error /(?i)^error /
+error /(?i)^ERROR/
+error /[Ee]rror/
+error /Execution data for class .* does not match./
+error /NullPointerException/
+error /FileNotFoundException/
+error /Cannot contact slave/
+error /fatal/
+error /The user name or passphrase you entered is not correct/
