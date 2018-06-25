@@ -1,2 +1,3 @@
-# DevOpsStuff
-Configures for DevOps Env
+# iDevOps
+
+# Life is short, make it easier
