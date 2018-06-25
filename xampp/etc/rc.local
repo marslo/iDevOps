@@ -11,7 +11,7 @@
 #
 # By default this script does nothing.
 
-/etc/netconfig.sh
+/etc/dual-network.sh
 /opt/lampp/lampp start
 /opt/lampp/bin/mysql.server start
 route add default gw [default.route.ip]
