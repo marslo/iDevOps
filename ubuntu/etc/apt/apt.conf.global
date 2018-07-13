@@ -4,3 +4,9 @@ Acquire::http::proxy:: my.artifactory.com "DIRECT";
 Acquire::https::Proxy "http://127.0.0.1:8123";
 Acquire::ftp::Proxy "http://127.0.0.1:8123";
 Acquire::socks::proxy "http://127.0.0.1:8123";
+
+# inspired from https://askubuntu.com/a/92773/92979
+# Acquire::http::Proxy {
+#     my.artifactory.com DIRECT;
+#     my.another.repo.com DIRECT;
+# };
