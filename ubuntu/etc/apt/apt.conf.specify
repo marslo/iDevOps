@@ -1,0 +1,3 @@
+Acquire::http::proxy::pww.artifactory.cdi.philips.com "DIRECT";
+Acquire::http::proxy::dl.google.com "http://127.0.0.1:8123";
+Acquire::https::Proxy::dl.google.com "http://127.0.0.1:8123";
