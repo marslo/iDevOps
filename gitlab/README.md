@@ -61,4 +61,5 @@ $ sudo gitlab-ctl reconfigure
 ```
 
 # Reference
+- [Configuration Options](https://docs.gitlab.com/omnibus/settings/configuration.html)
 - [Storing Git data in an alternative directory](https://docs.gitlab.com/omnibus/settings/configuration.html#storing-git-data-in-an-alternative-directory)
