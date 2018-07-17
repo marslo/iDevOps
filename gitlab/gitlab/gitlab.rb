@@ -89,7 +89,7 @@ external_url 'http://pww.gitlab.cdi.mygitlab.com'
 gitlab_rails['incoming_email_enabled'] = true
 gitlab_rails['incoming_email_address'] = "my.gitlab.accountmygitlab.com"
 gitlab_rails['incoming_email_email'] = "my.gitlab.account@mygitlab.com"
-gitlab_rails['incoming_email_password'] = "Philipszaq12wsx"
+gitlab_rails['incoming_email_password'] = "mypassword"
 
 gitlab_rails['incoming_email_host'] = "smtprelay-asp1.mygitlab.com"
 gitlab_rails['incoming_email_port'] = 25
