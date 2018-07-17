@@ -131,9 +131,9 @@ main:
   uid: 'userPrincipalName'
   method: 'plain'
   port: 389
-  base: 'OU=CODE,DC=code1,DC=emi,DC=philips,DC=com'
-  bind_dn: 'CN=310199163,OU=Users,OU=CNHSHAHUY1,OU=CODE,DC=code1,DC=emi,DC=philips,DC=com'
-  password: "Philipszaq12wsx"
+  base: 'OU=CODE,DC=code1,DC=emi,DC=mygitlab,DC=com'
+  bind_dn: 'CN=310199163,OU=Users,OU=CNHSHAHUY1,OU=CODE,DC=code1,DC=emi,DC=mygitlab,DC=com'
+  password: "mypassword"
   active_directory: true
   allow_username_or_email_login: false ## use active_dir and uid prin. this must be false.
   #user_filter: ''
