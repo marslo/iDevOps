@@ -1,11 +1,22 @@
 # Command:
 
 ## Check Healthy
+```
+$ sudo gitlab-rake gitlab:check SANITIZE=true --trace
+$ sudo gitlab-rake gitlab:check --trace
+$ sudo gitlab-rake db:migrate:status --trace
+```
 
 ## Check Logs
 ```
-$ sudo 
+$ sudo gitlab-ctl tail
 ```
+
+## Reconfigure
+```
+$ sudo gitlab-ctl reconfigure
+```
+
 # Upgrade
 ## Upgrade to 11.x
 
@@ -17,7 +28,7 @@ $ sudo
 - [Solution](https://gitlab.com/gitlab-org/omnibus-gitlab/issues/3610):
 
 1. Change `git_data_dirs({"default" => "[PATH_HERE]"})` to `git_data_dirs({"default" => { "path" => "[PATH_HERE]"}})`
-2. Execute `$ gitlab-ctl reconfigure`
+2. Execute `$ sudo gitlab-ctl reconfigure`
 
 E.g.:
 ```
