@@ -1,0 +1,68 @@
+// =============================================================================
+//   FileName: job-replication
+//     Author: marslo.jiao@gmail.com
+//    Created: 2018-08-21 14:40:03
+// LastChange: 2018-09-11 13:43:04
+// =============================================================================
+import com.cwctravel.hudson.plugins.extended_choice_parameter.ExtendedChoiceParameterDefinition
+
+def jobchoice = listJoabs()
+properties([
+    parameters([jobchoice, string(defaultValue: '', description: 'The JOB NAME which will be created in target Jenkins', name: 'NEWNAME', trim: false)])
+])
+
+node("jnlp-dind") {
+  def CLIPORT = 32380
+  def SWCOEJENKINS = "source.jenkins.com"
+  def PWWJENKINS = "target.jenkins.com"
+  def SWCOEUSER = "sourcedevops"
+  def PWWUSER = "targetdevops"
+
+  timestamps { ansiColor('xterm') {
+    stage("\u263B preparation") {
+      cleanWs()
+    } // stage
+    stage("Get Orgi Info") {
+
+    } 
+    stage ("Replicate to Target") {
+
+    }
+
+    Stage ("Trigger New Job") {
+
+    }
+
+  }} // ansiColor | timestamps
+} // node
+
+def buildEnv() {
+  sh 'bash -x $HOME/env/git_envinject.sh'
+  load "${WORKSPACE}/gitenv.groovy"
+
+  echo "GIT_COMMIT           : ${GIT_COMMIT}"
+  echo "GIT_COMMIT_FULL      : ${GIT_COMMIT_FULL}"
+  echo "GIT_REPONAME         : ${GIT_REPONAME}"
+  echo "GIT_COMMIT_COUNT     : ${GIT_COMMIT_COUNT}"
+} // buildEnv
+
+def updateDesc(imageName) {
+  imageMessage="<a href='${ARTIFACTORYURL}/docker-dev/${imageName}' target='_blank'><code>docker pull pww.artifactory.cdi.philips.com/${imageName}:<TAG></code></a>"
+  currentBuild.description = "${BASEVER}.${GIT_COMMIT_COUNT}:<br>${imageMessage}"
+} // updateDesc
+
+def listJoabs() {
+  def jobchoice = new ExtendedChoiceParameterDefinition("ORGNAME", "PT_SINGLE_SELECT", null, null, null,
+    """
+    import jenkins.model.*
+    import hudson.model.*
+    def namelist = [];
+    Jenkins.instance.getAllItems(AbstractItem.class).each { it ->
+      namelist.add(it.fullName)
+    };
+    return namelist
+    """,
+    null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, false, false, 5, "The Original Job need to bo replcated.", ","
+  )
+  return jobchoice
+}
