@@ -13,9 +13,16 @@ sudo ufw allow 'Nginx HTTP'
 sudo ufw allow 'Nginx HTTPS'
 sudo ufw allow 'OpenSSH'
 
+sudo ufw enable
 sudo ufw status
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+sudo ufw allow 30838/tcp
+sudo ufw allow 30380/tcp
+sudo ufw allow 32380/tcp
 
 sudo systemctl enable nginx
 sudo update-rc.d -f nginx defaults
 
 sudo service --status-all
+sudo systemctl is-active nginx
