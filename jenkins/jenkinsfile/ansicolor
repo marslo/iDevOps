@@ -1,0 +1,21 @@
+// ============================================================================
+//      FileName: ansicolor
+//        Author: marslo.jiao@gmail.com
+//       Created: 2019-06-03 16:09:34
+//    LastChange: 2019-06-03 16:09:34
+// ============================================================================
+
+node("master") {
+  ansiColor("xterm") {
+    echo "TERM=${env.TERM}"
+    stage ('color') {
+      echo "\u001B[31mI'm Red\u001B[0m"
+      echo "\u001B[32mI'm Red\u001B[0m"
+      echo "\u001B[33mI'm Red\u001B[0m"
+      echo "\u001B[34mI'm Red\u001B[0m"
+      echo "\u001B[35mI'm Red\u001B[0m"
+      echo "\u001B[36mI'm Red\u001B[0m"
+      echo "\u001B[37mI'm Red\u001B[0m"
+    }
+  }
+}
