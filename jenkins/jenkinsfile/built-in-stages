@@ -1,0 +1,25 @@
+//===========================================================================
+//    FileName: built-in-stages
+//      Author: marslo.jiao@gmail.com
+//     Created: 2019-05-05 00:07:55
+//  LastChange: 2019-06-03 16:04:05
+//===========================================================================
+
+
+node("wpcompiler") {
+  println env.JOB_BASE_NAME
+  // pipelineType              = (env.JOB_BASE_NAME =~ /^\w*_(\w+)$/)[0][-1]
+  // println "${pipelineType}"
+
+  stage('download code') {
+    echo 'prepare'
+    sh "cat ${WORKSPACE}/precommit.groovy"
+  }
+
+  test = load "built-in-stages.groovy"
+  test.runPrecommitStages("${WORKSPACE}/mypath")
+
+  stage('publish to artifactory') {
+    echo 'done!'
+  }
+}
