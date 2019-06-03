@@ -1,0 +1,64 @@
+// ==========================================================================
+//    FileName: disable-manual-trigger
+//      Author: marslo.jiao@gmail.com
+//     Created: 2019-06-03 16:11:26
+//  LastChange: 2019-06-03 16:14:13
+// ==========================================================================
+
+// ACL setting constants
+final Map ACL_ROLES = [
+  SUPER_USERS: [
+    'hudson.model.Item.Build',
+    'hudson.model.Item.Cancel',
+    'hudson.model.Item.Configure',
+    'hudson.model.Item.Discover',
+    'hudson.model.Item.Read',
+    'hudson.model.Item.Workspace',
+    'hudson.model.Run.Delete',
+    'hudson.model.Run.Update',
+    'hudson.plugins.promoted_builds.Promotion.Promote',
+    'hudson.scm.SCM.Tag',
+    'org.jenkinsci.plugins.envinject.EnvInjectPlugin.ViewVars'
+  ],
+  DEVELOPERS : [
+    'hudson.model.Run.Update',
+    'hudson.model.Item.Build',
+    'hudson.model.Item.Cancel',
+    'hudson.model.Item.Workspace',
+    'hudson.model.Item.Discover',
+    'hudson.model.Item.Read',
+  ],
+  SQA        : [
+    'hudson.model.Run.Update',
+    'hudson.model.Item.Build',
+    'hudson.model.Item.Workspace',
+    'hudson.model.Item.Discover',
+    'hudson.model.Item.Read',
+  ],
+  DEFAULT    : [
+    'hudson.model.Item.Read',
+    'hudson.model.Item.Discover',
+    'hudson.model.Item.Workspace' // for ATF to download binary artifact
+  ]
+]
+final Map ACL_USER_ROLES = [
+  'user-2' : 'DEFAULT',
+  'user-1'             : 'SUPER_USERS',
+  'anonymous'         : 'DEFAULT',
+  'authenticated'     : 'DEFAULT'
+]
+
+properties([
+  authorizationMatrix(
+    inheritanceStrategy: nonInheriting(),
+    permissions: ACL_USER_ROLES.collect { user ->
+      ACL_ROLES[user.value].collect { acl ->
+        "${acl}:${user.key}"
+      }
+    }.flatten()
+  )
+])
+
+node("master") {
+  echo 'yes'
+}
