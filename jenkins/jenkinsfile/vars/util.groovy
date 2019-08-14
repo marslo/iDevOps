@@ -91,10 +91,10 @@ def getArtifacts(String artiName, String buildJobName, String buildNumber) {
                             selector : specific(buildNumber)
 }
 
-def regroupArtifacts(String customer, String nand, String socname, String curVer, String target){
+def regroupArtifacts(String customer, String nand, String name, String curVer, String target){
   ver = getBuildVersion("*build/_out*/**/file_version.txt")
   target = "${ver}/${target}"
-  if (findFiles (glob: "**/build/_out*/**/${socname}*.suffix")) {
+  if (findFiles (glob: "**/build/_out*/**/${name}*.suffix")) {
     def tarSt = sh (
       returnStatus: true,
       script: """
@@ -198,8 +198,8 @@ def addEnvVarToCurBuild(Map envVars) {
 }
 
 // obsolete
-def tarArtifacts(String socname, String curVer, String target){
-  if (findFiles (glob: "**/build/_out*/**/${socname}*.suffix")) {
+def tarArtifacts(String name, String curVer, String target){
+  if (findFiles (glob: "**/build/_out*/**/${name}*.suffix")) {
     def tarSt = sh (
       returnStatus: true,
       script: """
@@ -213,7 +213,7 @@ def tarArtifacts(String socname, String curVer, String target){
 
 // obsolete
 def prepareArtifacts(String basePath) {
-  def prepare = sh (
+  def prepareStdout = sh (
     returnStdout: true,
     script: """
       set +x
@@ -236,8 +236,7 @@ def prepareArtifacts(String basePath) {
       done
     """
   ).trim()
-  println prepare
+  println prepareStdout
 }
-
 
 // vim: ts=2 sts=2 sw=2 et ft=Groovy
