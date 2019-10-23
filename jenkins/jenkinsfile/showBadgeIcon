@@ -1,0 +1,9 @@
+stage("show icon") {
+    def userTrigger = currentBuild.rawBuild.getCause(hudson.model.Cause$UserIdCause)
+    println "${userTrigger.shortDescription}"
+    if(manager.logContains("marslo.jiao@gmail.com")) {
+      manager.addWarningBadge("Thou shalt not use deprecated methods.")
+      manager.createSummary("warning.gif").appendText("<h1>You have been warned!</h1>", false, false, false, "red")
+      manager.buildUnstable()
+    } // if
+} // stage
