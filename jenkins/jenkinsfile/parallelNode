@@ -1,0 +1,51 @@
+node("master") {
+  timestamps {
+    stage("prepare") {
+      echo 'prepare'
+    }
+
+    def labels = ['tester-p02', 'tester-p03'] // labels for Jenkins node types we will build on
+    def stages = [:]
+    for (x in labels) {
+      def label = x
+      stages[label] = {
+        node(label) {
+          stage("${label}: sleep") {
+            sh "sleep 3"
+          }
+          stage("${label}: hostname") {
+            sh "hostname"
+          }
+        }
+      }
+    } // for
+
+    // for (x in labels) {
+    //     def label = x
+    //     stages[label] = {
+    //       node(label) {
+    //           stage('hostname') {
+    //               sh "hostname"
+    //           }
+    //       }
+    //     }
+    // } // for
+
+    // for (x in labels) {
+    //     def label = x
+    //     stages[label] = {
+    //       node(label) {
+    //           stage('env') {
+    //               sh "env"
+    //           }
+    //       }
+    //     }
+    // } // for
+    println stages
+    parallel stages
+
+    stage('end') {
+        echo 'end'
+    }
+  }
+}

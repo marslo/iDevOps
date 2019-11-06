@@ -1,0 +1,42 @@
+node("master") {
+  timestamps {
+
+    def data = [
+      "k1": "v1",
+      "k2": "v2",
+      "k3": "v3",
+    ]
+    println data
+    println mapToList(data)
+
+    work = [:]
+    for (kv in mapToList(data)) {
+      println "kv[0]: " + kv[0]
+      work[kv[0]] = createCompileJob(kv[0], kv[1])
+    }
+
+    parallel work
+  }
+}
+
+def createCompileJob(k, v) {
+  return {
+    stage("Build image ${k}") {
+      // Allocate a node and workspace
+      node("master") {
+        // withCredentials, etc.
+        echo "---------------"
+        echo "KEY=${k} VALUE='${v}'"
+        echo "==============="
+        sleep 3
+      }
+    }
+  }
+}
+
+@NonCPS
+List<List<?>> mapToList(Map map) {
+  return map.collect { it ->
+    [it.key, it.value]
+  }
+}

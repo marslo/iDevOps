@@ -1,0 +1,53 @@
+// main script block
+// could use eg. params.parallel build parameter to choose parallel/serial 
+def runParallel = true
+def buildStages
+
+node('master') {
+  stage('Initialise') {
+    // Set up List<Map<String,Closure>> describing the builds
+    buildStages = prepareBuildStages()
+    println("Initialised pipeline.")
+  }
+
+  for (builds in buildStages) {
+    if (runParallel) {
+      parallel(builds)
+    } else {
+      // run serially (nb. Map is unordered! )
+      for (build in builds.values()) {
+        build.call()
+      }
+    }
+  }
+
+  stage('Finish') {
+      println('Build complete.')
+  }
+}
+
+// Create List of build stages to suit
+def prepareBuildStages() {
+  def buildList = []
+
+  for (i=1; i<5; i++) {
+    println "=========== $i =============="
+    def buildStages = [:]
+    for (name in [ 'one', 'two', 'three' ] ) {
+      def n = "${name} ${i}"
+      buildStages.put(n, prepareOneBuildStage(n))
+    }
+    buildList.add(buildStages)
+  }
+  println buildList
+  return buildList
+}
+
+def prepareOneBuildStage(String name) {
+  return {
+    stage("Build stage:${name}") {
+      println("Building ${name}")
+      sh(script:'sleep 5', returnStatus:true)
+    }
+  }
+}

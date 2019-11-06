@@ -1,0 +1,74 @@
+// main script block
+// could use eg. params.parallel build parameter to choose parallel/serial 
+def nodes = ['wptester-p01', 'wptester-p02']
+def buildStages
+
+node('master') {
+  stage('Initialise') {
+    // Set up List<Map<String,Closure>> describing the builds
+    buildStages = prepareBuildStages()
+    println("Initialised pipeline.")
+  }
+
+  for (builds in buildStages) {
+      parallel(builds)
+  }
+
+  stage('Finish') {
+      println('Build complete.')
+  }
+}
+
+// Create List of build stages to suit
+def prepareBuildStages() {
+  def buildList = []
+
+  for (stages in ['flash', 'reboot', 'test']) {
+    def buildStages = [:]
+    for (tm in ['wptester-p01', 'wptester-p02']) {
+      def n = "${tm} ${stages}"
+      buildStages.put("${tm} ${stages}", prepareParallelStage("${tm}", "${stages}"))
+    }
+    buildList.add(buildStages)
+  }
+  return buildList
+}
+
+def prepareParallelStage(String tmName, String stageName) {
+  return {
+    stage("${tmName}: ${stageName}") {
+      node("${tmName}") {
+        println("stage: ${stageName}")
+        sh 'hostname'
+      } // node
+    }
+  }
+}
+
+
+def flashStage(String name) {
+  return {
+    stage("${name}") {
+      println("Building ${name}")
+      sh(script:'sleep 5', returnStatus:true)
+    }
+  }
+}
+
+def rebootStage(String name) {
+  return {
+    stage("reboot") {
+      println("Building ${name}")
+      sh(script:'sleep 5', returnStatus:true)
+    }
+  }
+}
+
+def testStage(String nodeName) {
+  return {
+    stage("test") {
+      println("Building ${name}")
+      sh(script:'sleep 5', returnStatus:true)
+    }
+  }
+}
