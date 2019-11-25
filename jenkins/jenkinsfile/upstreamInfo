@@ -1,0 +1,27 @@
+Map upStreamInfo = [:]
+
+upStreamInfo = getUpStreamInfo( currentBuild.upstreamBuilds )
+if ( upStreamInfo.buildNum ) {
+  if ( upStreamInfo['project'].split(upStreamInfo['buildNum'])[0] != currentBuild.getFullDisplayName().split(env.BUILD_DISPLAY_NAME)[0] ) {
+    rtTarget = upStreamInfo['buildNum'].split('#')[-1]
+  }
+  println prettyPrint( toJson(upStreamInfo) )
+}
+
+def getUpStreamInfo( build ) {
+  Map upstreamInfo = [:]
+  if ( 0 == build.size ) {
+    upstreamInfo["project"]   = null
+    upstreamInfo["fullDesc"]  = null
+    upstreamInfo["buildNum"]  = null
+  } else {
+    Integer upIndex = build.modCount - 1
+    upstreamInfo["shortDesc"] = build[upIndex].getBuildCauses()["shortDescription"][0]
+    upstreamInfo["buildNum"]  = build[upIndex].getDisplayName()
+    upstreamInfo["project"]   = build[upIndex].getFullDisplayName()
+    upstreamInfo["fullUrl"]   = build[upIndex].getAbsoluteUrl()
+    upstreamInfo["fullDesc"]  = getHTMLLink(build[upIndex].getAbsoluteUrl(), build[upIndex].getFullDisplayName())
+  }
+  return upstreamInfo
+}
+
