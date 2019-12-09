@@ -1,3 +1,5 @@
+// https://issues.jenkins-ci.org/browse/JENKINS-60343
+
 podTemplate(cloud: 'My Kubernetes', containers: [
   containerTemplate(
     name: 'jnlp',
