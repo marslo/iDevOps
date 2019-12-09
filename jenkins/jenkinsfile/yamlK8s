@@ -1,0 +1,32 @@
+podTemplate(
+  cloud: 'My Kubernetes',
+  showRawYaml: true,
+  namespace: 'devops-ci',
+  yaml: """
+    apiVersion: v1
+    kind: Pod
+    spec:
+      containers:
+      - name: jnlp
+        image: 'my.artifactory.com/my-jnlp:1.0'
+        workingDir: '/home/devops'
+        resources:
+          limits:
+            memory: "1024Mi"
+            cpu: "512m"
+          requests:
+            memory: "512Mi"
+            cpu: "256m"
+  """
+) {
+  node(POD_LABEL) { container('jnlp') {
+    stage('Run shell') {
+      sh """
+        id
+        whoami
+        echo ${WORKSPACE}
+        realpath ${WORKSPACE}
+      """
+    }
+  }}
+}

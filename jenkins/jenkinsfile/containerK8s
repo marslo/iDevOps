@@ -1,0 +1,25 @@
+podTemplate(cloud: 'My Kubernetes', containers: [
+  containerTemplate(
+    name: 'jnlp',
+    image: 'my.artifactory.com/my-jnlp:1.1-bionic',
+    ttyEnabled: true,
+    privileged: false,
+    alwaysPullImage: false,
+    workingDir: '/home/devops',
+    resourceRequestCpu: '256m',
+    resourceLimitCpu: '512m',
+    resourceRequestMemory: '512Mi',
+    resourceLimitMemory: '1024Mi'
+  )
+]) {
+  node(POD_LABEL) {
+    stage ('info') {
+      sh """
+        id
+        whoami
+        echo ${WORKSPACE}
+        realpath ${WORKSPACE}
+      """
+    }
+  }
+}
