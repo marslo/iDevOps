@@ -1,0 +1,210 @@
+# pvc
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: devops-pv
+spec:
+  capacity:
+    storage: 200Gi
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    server: 10.69.108.180
+    path: "/devops_vol/jenkins/DEVOPS"
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: devops-pvc
+  namespace: devops-ci
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 200Gi
+  storageClassName: ""
+  volumeName: devops-pv
+
+---
+# sa
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    k8s-app: devops
+  name: devops-admin
+  namespace: devops-ci
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: devops-admin
+  labels:
+    k8s-app: devops
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: devops-admin
+  namespace: devops-ci
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: devops
+  namespace: devops-ci
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: devops
+  template:
+    metadata:
+      labels:
+        app: devops
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - devops5-www06
+      containers:
+        - name: devops
+          image: jenkins/jenkins:2.206
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: JAVA_OPTS
+              value: -Xms2048m
+                     -Xmx10240m
+                     -XX:PermSize=2048m
+                     -XX:MaxPermSize=10240m
+                     -XX:+UseG1GC
+                     -Duser.timezone='America/Los_Angeles'
+                     -Dhudson.model.DirectoryBrowserSupport.CSP="sandbox allow-same-origin allow-scripts; default-src 'self'; script-src * 'unsafe-eval'; img-src *; style-src * 'unsafe-inline'; font-src *;"
+                     -Djenkins.slaves.NioChannelSelector.disabled=true
+                     -Djenkins.slaves.JnlpSlaveAgentProtocol3.enabled=false
+                     -Djava.awt.headless=true
+                     -Djenkins.security.ClassFilterImpl.SUPPRESS_WHITELIST=true
+                     -Dhudson.model.ParametersAction.keepUndefinedParameters=true
+                     -Dcom.cloudbees.workflow.rest.external.ChangeSetExt.resolveCommitAuthors=true
+                     -Djenkins.install.runSetupWizard=true
+                     -Dpermissive-script-security.enabled=true
+                     -DsessionTimeout=1440
+                     -DsessionEviction=43200
+            - name: JNLP_PROTOCOL_OPTS
+              value: -Dorg.jenkinsci.remoting.engine.JnlpProtocol3.disabled=false
+          ports:
+            - name: http-port
+              containerPort: 8080
+            - name: jnlp-port
+              containerPort: 50000
+            - name: cli-port
+              containerPort: 38338
+          volumeMounts:
+            - name: devops-home
+              mountPath: /var/jenkins_home
+            - name: docker-sock
+              mountPath: /var/run/docker.sock
+            - name: docker
+              mountPath: /usr/bin/docker
+          resources:
+            requests:
+              memory: '8Gi'
+              cpu: '8'
+            limits:
+              memory: '16Gi'
+              cpu: '16'
+      volumes:
+        - name: devops-home
+          persistentVolumeClaim:
+            claimName: devops-pvc
+        - name: docker-sock
+          hostPath:
+            path: /var/run/docker.sock
+        - name: docker
+          hostPath:
+            path: /usr/bin/docker
+      serviceAccount: "devops-admin"
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: devops
+  namespace: devops-ci
+spec:
+  template:
+    metadata:
+      labels:
+        name: devops
+spec:
+  type: ClusterIP
+  ports:
+    - name: http-port
+      port: 8080
+      targetPort: 8080
+  selector:
+    app: devops
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: devops-discovery
+  namespace: devops-ci
+spec:
+  template:
+    metadata:
+      labels:
+        name: devops-discovery
+spec:
+  type: NodePort
+  ports:
+    - name: cli-port
+      nodePort: 32388
+      port: 38338
+      targetPort: 38338
+    - name: jnlp-port
+      nodePort: 32389
+      port: 50000
+      targetPort: 50000
+  selector:
+    app: devops
+
+---
+
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: devops
+  namespace: devops-ci
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    ingress.kubernetes.io/whitelist-x-forwarded-for: "false"
+    traefik.frontend.redirect.entryPoint: https
+    ingress.kubernetes.io/ssl-redirect: "true"
+  labels:
+    app: devops
+spec:
+  rules:
+  - host: devops.mysite.com
+    http:
+      paths:
+      - backend:
+          serviceName: devops
+          servicePort: http-port
+          # servicePort: 8080
+  tls:
+  - hosts:
+    - devops.mysite.com
+    secretName: mysite-tls
