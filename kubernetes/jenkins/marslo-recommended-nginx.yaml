@@ -1,14 +1,50 @@
+# namespace
 ---
-apiVersion: v1
 kind: Namespace
+apiVersion: v1
 metadata:
   name: devops
+  labels:
+    name: devops
+
+# pvc
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: marslo-jenkins-pv
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 20Gi
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    path: "/home/marslo/MARSLO_JENKINS"
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: marslo-jenkins-pvc
+  namespace: marslo
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: "manual"
+  volumeName: marslo-jenkins-pv
+
+# sa
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   labels:
-    k8s-app: devops-jenkins
+    k8s-app: marlso-jenkins
   name: jenkins-admin
   namespace: devops
 ---
@@ -17,7 +53,7 @@ kind: ClusterRoleBinding
 metadata:
   name: jenkins-admin
   labels:
-    k8s-app: devops-jenkins
+    k8s-app: marlso-jenkins
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -27,25 +63,25 @@ subjects:
   name: jenkins-admin
   namespace: devops
 
+# deploy
 ---
-
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: devops-jenkins
+  name: marlso-jenkins
   namespace: devops
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: devops-jenkins
+      app: marlso-jenkins
   template:
     metadata:
       labels:
-        app: devops-jenkins
+        app: marlso-jenkins
     spec:
       containers:
-        - name: devops-jenkins
+        - name: marlso-jenkins
           image: jenkins/jenkins:2.196
           imagePullPolicy: IfNotPresent
           env:
@@ -54,6 +90,7 @@ spec:
                      -Xmx10240m
                      -XX:PermSize=2048m
                      -XX:MaxPermSize=10240m
+                     -XX:+UseG1GC
                      -Duser.timezone='America/Los_Angeles'
                      -Dhudson.model.DirectoryBrowserSupport.CSP="sandbox allow-same-origin allow-scripts; default-src 'self'; script-src * 'unsafe-eval'; img-src *; style-src * 'unsafe-inline'; font-src *;"
                      -Djenkins.slaves.NioChannelSelector.disabled=true
@@ -66,6 +103,7 @@ spec:
                      -Dpermissive-script-security.enabled=true
                      -DsessionTimeout=1440
                      -DsessionEviction=43200
+                     -Dorg.eclipse.jetty.server.Request.maxFormContentSize=5000000
             - name: JNLP_PROTOCOL_OPTS
               value: -Dorg.jenkinsci.remoting.engine.JnlpProtocol3.disabled=false
           ports:
@@ -76,7 +114,7 @@ spec:
             - name: cli-port
               containerPort: 38238
           volumeMounts:
-            - name: devops-jenkins-home
+            - name: marlso-jenkins-home
               mountPath: /var/jenkins_home
             - name: docker-sock
               mountPath: /var/run/docker.sock
@@ -85,10 +123,12 @@ spec:
       nodeSelector:
         jenkins: master
       volumes:
-        - name: devops-jenkins-home
-          hostPath:
-            path: /opt/DEVOPS_JENKINS
-            type: Directory
+        - name: marlso-jenkins-home
+          persistentVolumeClaim:
+            claimName: marslo-jenkins-pvc
+          # hostPath:
+            # path: /home/marslo/MARSLO_JENKINS
+            # type: Directory
         - name: docker-sock
           hostPath:
             path: /var/run/docker.sock
@@ -99,54 +139,59 @@ spec:
         jenkins: "true"
       serviceAccount: "jenkins-admin"
 
+# svc
 ---
-
 apiVersion: v1
 kind: Service
 metadata:
-  name: devops-jenkins
+  name: marlso-jenkins
   namespace: devops
   annotations:
     prometheus.io/scrape: 'true'
 spec:
   type: ClusterIP
   ports:
-    - name: devops-jenkins
+    - name: http
       port: 8080
-      targetPort: 8080
-    - name: jenkins-agent
-      port: 30380
-      targetPort: 30380
+      targetPort: http-port
   selector:
-    app: devops-jenkins
+    app: marlso-jenkins
   externalIPs:
-    - 10.69.78.15
+    # - <virtual ip address>
+    - 1.2.3.4
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: devops-jenkins-discovery
+  name: marlso-jenkins-discovery
   namespace: devops
   annotations:
     prometheus.io/scrape: 'true'
 spec:
-  type: NodePort
+  type: LoadBalancer
+  externalIPs:
+    # - <virtual ip address>
+    - 1.2.3.4
+  externalTrafficPolicy: Cluster
   ports:
-    - name: cli-agent
+    - name: jnlp
+      port: 30380
+      targetPort: jnlp-port
+    - name: cli
       nodePort: 32380
       port: 38238
-      targetPort: 38238
+      targetPort: cli-port
   selector:
-    app: devops-jenkins
+    app: marlso-jenkins
   externalIPs:
     - 10.69.78.15
 
+# nginx ingress
 ---
-
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  name: devops-jenkins
+  name: marlso-jenkins-ing
   namespace: devops
   annotations:
     kubernetes.io/ingress.class: "nginx"
@@ -156,13 +201,13 @@ metadata:
 spec:
   tls:
   - hosts:
-    - mytest-jenkins.marslo.com
+    - marslo-jenkins.marslo.com
     secretName: marslo-certs
   rules:
-  - host: mytest-jenkins.marslo.com
+  - host: marslo-jenkins.marslo.com
     http:
       paths:
       - path:
         backend:
-          serviceName: devops-jenkins
-          servicePort: 8080
+          serviceName: marlso-jenkins
+          servicePort: http

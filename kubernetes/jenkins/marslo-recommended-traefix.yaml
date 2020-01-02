@@ -1,3 +1,12 @@
+# namespace
+---
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: devips-ci
+  labels:
+    name: devops-ci
+
 # pvc
 ---
 kind: PersistentVolume
@@ -10,7 +19,7 @@ spec:
   accessModes:
     - ReadWriteMany
   nfs:
-    server: 10.69.108.180
+    server: 1.2.3.4
     path: "/devops_vol/jenkins/DEVOPS"
 ---
 kind: PersistentVolumeClaim
@@ -101,6 +110,7 @@ spec:
                      -Dpermissive-script-security.enabled=true
                      -DsessionTimeout=1440
                      -DsessionEviction=43200
+                     -Dorg.eclipse.jetty.server.Request.maxFormContentSize=5000000
             - name: JNLP_PROTOCOL_OPTS
               value: -Dorg.jenkinsci.remoting.engine.JnlpProtocol3.disabled=false
           ports:
@@ -151,9 +161,10 @@ spec:
 spec:
   type: ClusterIP
   ports:
-    - name: http-port
+    - name: http
+      protocol: TCP
       port: 8080
-      targetPort: 8080
+      targetPort: http-port
   selector:
     app: devops
 ---
@@ -168,16 +179,21 @@ spec:
       labels:
         name: devops-discovery
 spec:
-  type: NodePort
+  type: LoadBalancer
+  externalIPs:
+    - 1.2.3.4
+  externalTrafficPolicy: Cluster
   ports:
-    - name: cli-port
-      nodePort: 32388
-      port: 38338
-      targetPort: 38338
-    - name: jnlp-port
+    - name: jnlp
+      protocol: TCP
       nodePort: 32389
       port: 50000
-      targetPort: 50000
+      targetPort: jnlp-port
+    - name: cli
+      protocol: TCP
+      nodePort: 32388
+      port: 38338
+      targetPort: cli-port
   selector:
     app: devops
 
@@ -193,18 +209,21 @@ metadata:
     ingress.kubernetes.io/whitelist-x-forwarded-for: "false"
     traefik.frontend.redirect.entryPoint: https
     ingress.kubernetes.io/ssl-redirect: "true"
+    traefik.ingress.kubernetes.io/frontend-entry-points: https,http
+    traefik.ingress.kubernetes.io/redirect-entry-point: https
+    traefik.ingress.kubernetes.io/redirect-permanent: "true"
   labels:
     app: devops
 spec:
   rules:
-  - host: devops.mysite.com
+  - host: devops.marslo.com
     http:
       paths:
       - backend:
           serviceName: devops
-          servicePort: http-port
+          servicePort: http
           # servicePort: 8080
   tls:
   - hosts:
-    - devops.mysite.com
-    secretName: mysite-tls
+    - devops.marslo.com
+    secretName: marslo-cert
