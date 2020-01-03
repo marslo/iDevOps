@@ -1,0 +1,24 @@
+# sa
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    k8s-app: grafana
+  name: grafana-admin
+  namespace: kubernetes-dashboard
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: grafana-admin
+  labels:
+    k8s-app: grafana
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: grafana
+  namespace: kubernetes-dashboard
+

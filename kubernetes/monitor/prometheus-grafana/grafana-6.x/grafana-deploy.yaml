@@ -1,0 +1,70 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: kubernetes-dashboard
+  labels:
+    app: grafana
+    component: core
+spec:
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: grafana
+        component: core
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - kubems-01
+      containers:
+      - image: grafana/grafana
+        name: grafana
+        imagePullPolicy: IfNotPresent
+        resources:
+          # keep request = limit to keep this container in guaranteed class
+          limits:
+            cpu: 512m
+            memory: 512Mi
+          requests:
+            cpu: 256m
+            memory: 256Mi
+        env:
+          # The following env variables set up basic auth twith the default admin user and admin password.
+          - name: GF_SERVER_DOMAIN
+            value: "grafana.marslo.com"
+          - name: GF_SECURITY_ADMIN_PASSWORD
+            value: "admin"
+          - name: GF_INSTALL_PLUGINS
+            value: "grafana-kubernetes-app"
+          - name: GF_SERVER_ROOT_URL
+            value: "/"
+          - name: GF_AUTH_BASIC_ENABLED
+            value: "true"
+          - name: GF_AUTH_ANONYMOUS_ENABLED
+            value: "false"
+        readinessProbe:
+          httpGet:
+            path: /login
+            port: 3000
+        volumeMounts:
+        - name: grafana-persistent-storage
+          mountPath: /var/lib/grafana
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      serviceAccountName: grafana
+      volumes:
+      - name: grafana-persistent-storage
+        persistentVolumeClaim:
+          claimName: grafana
