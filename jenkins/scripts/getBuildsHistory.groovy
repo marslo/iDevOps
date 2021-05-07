@@ -1,7 +1,7 @@
 // get single build
-def buildName = Jenkins.instance.getItemByFullName('<group>/<name>')
+def job = Jenkins.instance.getItemByFullName('<group>/<name>')
 println "All builds: "
-buildName.getBuilds().each{
+job.getBuilds().each{
   println """
               id : ${it.getId()}
     build number : ${it.getNumber()}

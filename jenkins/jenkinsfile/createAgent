@@ -1,0 +1,80 @@
+#!/usr/bin/env groovy
+
+import jenkins.model.*
+import hudson.model.*
+import hudson.slaves.*
+import hudson.slaves.EnvironmentVariablesNodeProperty.Entry
+import hudson.plugins.sshslaves.verifiers.*
+
+final String CREDENTIAL = 'MyCredential'
+final String SSH_PORT   = 22
+final String ROOT_DIR   = '/home/marslo'
+
+properties([
+  parameters([
+    string('name')        ,
+    string('description') ,
+    string('ip')          ,
+    booleanParam('force')
+  ])
+])
+
+node('master') {
+  stage('create agent') {
+    if ( ! isAgentExists(params.name) ) {
+
+      createAgentViaSSH( params.name, params.description, params.ip )
+      if ( isAgentExists(params.name) ) {
+        println "agent ${params.name} created succeed. details: \n" +
+                "${env.JENKINS_URL}computer/${params.name}"
+      } else {
+        warnError('failed') {
+          println "agent ${params.name} create failed"
+          sh('false')
+        }
+      } // if agent exists after created
+    } else {
+      catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
+        println "${params.name} has already exists in agent list"
+        sh('false')
+      }
+    } // if agent exists before create
+  } // stage : create agent
+}
+
+def isAgentExists( String name ) {
+  Jenkins.instance.getNodes().collect{ it.computer?.name }.contains( name )
+} // isAgentExists
+
+def createAgentViaSSH( String name, String description, String ip ) {
+
+  Slave agent = new DumbSlave(
+    name     ,
+    ROOT_DIR ,
+    new hudson.plugins.sshslaves.SSHLauncher(
+      ip           ,                             // Host
+      SSH_PORT     ,                             // Port
+      CREDENTIAL   ,                             // Credentials
+      (String)null ,                             // JVM Options
+      (String)null ,                             // JavaPath
+      (String)null ,                             // Prefix Start Agent Command
+      (String)null ,                             // Suffix Start Agent Command
+      (Integer) 30 ,                             // Connection Timeout in Seconds
+      (Integer) 5  ,                             // Maximum Number of Retries
+      (Integer) 30 ,                             // The number of seconds to wait between retries
+      new NonVerifyingKeyVerificationStrategy()  // Host Key Verification Strategy
+    )
+  )
+
+  agent.nodeDescription   = description
+  agent.numExecutors      = 1
+  agent.labelString       = ""
+  agent.mode              = Node.Mode.NORMAL
+  agent.retentionStrategy = new RetentionStrategy.Always()
+
+  Jenkins.instance.addNode(agent)
+  println "Node has been created successfully."
+
+} // createAgentViaSSH
+
+// vim: ts=2 sts=2 sw=2 et ft=Groovy
