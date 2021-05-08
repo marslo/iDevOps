@@ -66,18 +66,19 @@ Jenkins.instance.getAllItems( Job.class ).findAll { Job job ->
   }
 }
 
+println simpleDateFormat.format(START) + ' ~ ' + simpleDateFormat.format(END) + ' :'
 results.each { name, values ->
   status."${name}" = [ SUCCESS:0, UNSTABLE:0, FAILURE:0, ABORTED:0, INPROGRESS:0, NOT_BUILT:0 ]
   Map wanted = values.findAll { k, v -> v.get('paramsExist') == true }
   wanted.each { k, v -> status."${name}"."${v.status}" += 1 }
 
-  println "~~> ${name} : ${wanted.size()} : "
+  println "\n~~> ${name} : ${wanted.size()} : "
   status."${name}".each { r, c ->
     if (c) {
-      println r +
+      println '\t\t' + r +
               ' :\ttotal : ' + c +
-              '\tpercentage : ' + (wanted.size() ? "${df.format(c * 100 / wanted.size())}%" : '0%') +
-              '\n\t\tbuilds :\t' +  wanted.findAll { k, v -> v.get('status') == r }?.keySet()?.collect{ "#${it}" }.join(', ') + '\n'
+              '\tpercentage : ' + (wanted.size() ? "${df.format(c * 100 / wanted.size())}%" : '0%') + '\n' +
+              '\t\t\t\tbuilds :\t' +  wanted.findAll { k, v -> v.get('status') == r }?.keySet()?.collect{ "#${it}" }.join(', ')
     }  // print only exists status
 }
 

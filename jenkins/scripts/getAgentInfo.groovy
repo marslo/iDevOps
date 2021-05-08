@@ -1,29 +1,29 @@
 #!/usr/bin/env groovy
 // inspired from https://wiki.jenkins.io/display/JENKINS/Display+Information+About+Nodes
 
-for (aSlave in hudson.model.Hudson.instance.slaves) {
+for (agent in hudson.model.Hudson.instance.slaves) {
   println('====================');
-  println('Name: ' + aSlave.name);
-  println('getLabelString: ' + aSlave.getLabelString());
-  println('getNumExectutors: ' + aSlave.getNumExecutors());
-  println('getRemoteFS: ' + aSlave.getRemoteFS());
-  println('getMode: ' + aSlave.getMode());
-  println('getRootPath: ' + aSlave.getRootPath());
-  println('getDescriptor: ' + aSlave.getDescriptor());
-  println('getComputer: ' + aSlave.getComputer());
-  println('\tcomputer.isAcceptingTasks: ' + aSlave.getComputer().isAcceptingTasks());
-  println('\tcomputer.isLaunchSupported: ' + aSlave.getComputer().isLaunchSupported());
-  println('\tcomputer.getConnectTime: ' + aSlave.getComputer().getConnectTime());
-  println('\tcomputer.getDemandStartMilliseconds: ' + aSlave.getComputer().getDemandStartMilliseconds());
-  println('\tcomputer.isOffline: ' + aSlave.getComputer().isOffline());
-  println('\tcomputer.countBusy: ' + aSlave.getComputer().countBusy());
-  //if (aSlave.name == 'NAME OF NODE TO DELETE') {
+  println('Name: ' + agent.name);
+  println('getLabelString: ' + agent.getLabelString());
+  println('getNumExectutors: ' + agent.getNumExecutors());
+  println('getRemoteFS: ' + agent.getRemoteFS());
+  println('getMode: ' + agent.getMode());
+  println('getRootPath: ' + agent.getRootPath());
+  println('getDescriptor: ' + agent.getDescriptor());
+  println('getComputer: ' + agent.getComputer());
+  println('\tcomputer.isAcceptingTasks: ' + agent.getComputer().isAcceptingTasks());
+  println('\tcomputer.isLaunchSupported: ' + agent.getComputer().isLaunchSupported());
+  println('\tcomputer.getConnectTime: ' + agent.getComputer().getConnectTime());
+  println('\tcomputer.getDemandStartMilliseconds: ' + agent.getComputer().getDemandStartMilliseconds());
+  println('\tcomputer.isOffline: ' + agent.getComputer().isOffline());
+  println('\tcomputer.countBusy: ' + agent.getComputer().countBusy());
+  //if (agent.name == 'NAME OF NODE TO DELETE') {
   //  println('Shutting down node!!!!');
-  //  aSlave.getComputer().setTemporarilyOffline(true,null);
-  //  aSlave.getComputer().doDoDelete();
+  //  agent.getComputer().setTemporarilyOffline(true,null);
+  //  agent.getComputer().doDoDelete();
   //}
-  println('\tcomputer.getLog: ' + aSlave.getComputer().getLog());
-  println('\tcomputer.getBuilds: ' + aSlave.getComputer().getBuilds());
+  println('\tcomputer.getLog: ' + agent.getComputer().getLog());
+  println('\tcomputer.getBuilds: ' + agent.getComputer().getBuilds());
 }
 
 
