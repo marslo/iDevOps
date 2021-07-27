@@ -1,3 +1,4 @@
+#!/usr/bin/env groovy
 // https://issues.jenkins-ci.org/browse/JENKINS-60343
 
 podTemplate(
@@ -8,6 +9,9 @@ podTemplate(
     apiVersion: v1
     kind: Pod
     spec:
+      hostNetwork: true
+      nodeSelector:
+        <label_name>: "<value>"
       containers:
       - name: jnlp
         image: 'my.artifactory.com/my-jnlp:1.0'
@@ -32,3 +36,5 @@ podTemplate(
     }
   }}
 }
+
+// vim: ft=Jenkinsfile ts=2 sts=2 sw=2 et

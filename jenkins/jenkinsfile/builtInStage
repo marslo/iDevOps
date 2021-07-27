@@ -6,20 +6,16 @@
 //===========================================================================
 
 
-node("wpcompiler") {
-  println env.JOB_BASE_NAME
-  // pipelineType              = (env.JOB_BASE_NAME =~ /^\w*_(\w+)$/)[0][-1]
-  // println "${pipelineType}"
-
-  stage('download code') {
+node('master') {
+  stage( 'download code' ) {
     echo 'prepare'
-    sh "cat ${WORKSPACE}/precommit.groovy"
+    sh "cat ${WORKSPACE}/builtInStage.groovy"
   }
 
-  test = load "built-in-stages.groovy"
-  test.runPrecommitStages("${WORKSPACE}/mypath")
+  test = load "builtInStage.groovy"
+  test.runAllStages("${WORKSPACE}/mypath")
 
-  stage('publish to artifactory') {
+  stage( 'publish' ) {
     echo 'done!'
   }
 }

@@ -1,13 +1,13 @@
 //===========================================================================
-//    FileName: built-in-stages.groovy
+//    FileName: builtInStage.groovy
 //      Author: marslo.jiao@gmail.com
 //     Created: 2019-05-05 00:07:55
-//  LastChange: 2019-06-03 16:02:48
+//  LastChange: 2021-07-27 16:28:36
 //===========================================================================
 
-strA = "this is string A"
+String str = "this is string A"
 
-def runStageA(String bPath) {
+def stageA( String bPath ) {
   stage('scenario A') {
     echo 'a'
     sh "touch a.groovy"
@@ -15,15 +15,15 @@ def runStageA(String bPath) {
   }
 }
 
-def runStageB() {
+def stageB() {
   stage('scenario B') {
     echo 'b'
-    println strA
-    echo "${strA}"
+    println str
+    echo "${str}"
   }
 }
 
-def runStageC() {
+def stageC() {
   stage('scenario C') {
     def strC = "this is string C"
     echo 'c'
@@ -33,10 +33,10 @@ def runStageC() {
   }
 }
 
-def runPrecommitStages(String basePath){
-  runStageA(basePath)
-  runStageB()
-  runStageC()
+def runAllStages( String basePath ) {
+  stageA( basePath )
+  stageB()
+  stageC()
 }
 
 return this
