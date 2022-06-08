@@ -1,0 +1,52 @@
+apiServerExtraArgs:
+  authorization-mode: Node,RBAC
+apiVersion: kubeadm.k8s.io/v1alpha3
+auditPolicy:
+  logDir: /var/log/kubernetes/audit
+  logMaxAge: 2
+  path: ""
+certificatesDir: /etc/kubernetes/pki
+clusterName: kubernetes
+controlPlaneEndpoint: "${virtualIP}:6443"
+apiServerCertSANs:
+- "<api.server.com>"
+- "${virtualIP}"
+- "${master1IP}"
+- "${master1Hostname}"
+- "${master2IP}"
+- "${master2Hostname}"
+- "${master3IP}"
+- "${master3Hostname}"
+etcd:
+  local:
+    dataDir: /var/lib/etcd
+    image: ""
+    extraArgs:
+      name: "${master1Hostname}"
+      listen-client-urls: "https://${master1IP}:2379,https://${master2IP}:2379,https://${master3IP}:2379"
+      advertise-client-urls: "https://${master3IP}:2379"
+      listen-peer-urls: "https://${master3IP}:2380"
+      initial-advertise-peer-urls: "https://${master3IP}:2380"
+      initial-cluster: "${master1Hostname}=https://${master1IP}:2380,${master3Hostname}=https://${master3IP}:2380,${master2Hostname}=https://${master2IP}:2380"
+    serverCertSANs:
+      - "${master1Hostname}"
+      - "${master1IP}"
+      - "${master2Hostname}"
+      - "${master2IP}"
+      - "${master3Hostname}"
+      - "${master3IP}"
+    peerCertSANs:
+      - "${master1Hostname}"
+      - "${master1IP}"
+      - "${master2Hostname}"
+      - "${master2IP}"
+      - "${master3Hostname}"
+      - "${master3IP}"
+imageRepository: k8s.gcr.io
+kind: ClusterConfiguration
+kubernetesVersion: v1.12.3
+networking:
+  dnsDomain: cluster.local
+  podSubnet: 10.244.0.0/16
+  serviceSubnet: 10.96.0.0/12
+unifiedControlPlaneImage: ""
