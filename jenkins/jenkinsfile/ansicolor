@@ -1,3 +1,4 @@
+#!/usr/bin/env groovy
 // ============================================================================
 //      FileName: ansicolor
 //        Author: marslo.jiao@gmail.com
@@ -19,3 +20,73 @@ node("master") {
     }
   }
 }
+
+
+
+@Library('libs') _
+timestamps { ansiColor('xterm') {
+
+    podTemplate( cloud: 'Prod Kubernetes',
+                 label: env.BUILD_TAG ,
+                 name: env.BUILD_TAG,
+                 showRawYaml: true,
+                 namespace: 'devops-builder',
+                 yaml: """
+                   apiVersion: v1
+                   kind: Pod
+                   spec:
+                     hostNetwork: true
+                     nodeSelector:
+                       devops.marvell/loc: "dc5"
+                     containers:
+                     - name: jnlp
+                       image: 'jenkins/jnlp-slave:3.35-5-alpine'
+                       workingDir: '/home/devops'
+                       resources:
+                         limits:
+                           memory: "1024Mi"
+                           cpu: "512m"
+                         requests:
+                           memory: "512Mi"
+                           cpu: "256m"
+                 """
+    ) { node( env.BUILD_TAG ) { container( 'jnlp' ) {
+
+          List lines = []
+          List line  = []
+          color.COLOR_MATRIX.keySet().collect {
+            color.show( it, it )
+          }.flatten().eachWithIndex{ c, i ->
+            line << c
+            if ( 4 == (i+1)%6 ) {
+              lines += [ line ]
+              line = []
+            }
+          }
+          println lines.collect { it.join(' '*2) }.join('\n')
+
+
+          List matrix = []
+          line = []
+          (0..7).collect{ attr ->
+            [38, 48].collect { fgbg ->
+              (0..255).collect { color ->
+                "\033[${attr};${fgbg};5;${color}m" +
+                """ dc5-ssdfw1 \\033[${attr};${fgbg};${String.format("%03d", color)}m """ +
+                "\033[0m"
+              }
+            }
+          }.flatten().eachWithIndex{ c, idx ->
+            line += [c]
+            if ( 4 == (idx+1)%6 ) {
+              matrix.add( line )
+              line = []
+            }
+          }
+          // println matrix.collect{ it.join(' '*2) }.join('\n')
+
+      }} // container | node
+    } // podTemplate
+}} // ansiColor | timestamps
+
+// vim: ft=Jenkinsfile ts=2 sts=2 sw=2 et
