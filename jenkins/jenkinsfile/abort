@@ -1,0 +1,48 @@
+#!/usr/bin/env groovy
+
+import jenkins.model.CauseOfInterruption
+import org.jenkinsci.plugins.workflow.steps.TimeoutStepExecution
+
+autoAccept {
+  try {
+
+    timeout( time: 5, unit: 'SECONDS' ) { sleep( time: 10, unit: 'SECONDS' ) }
+
+  } catch ( org.jenkinsci.plugins.workflow.steps.FlowInterruptedException e ) {
+
+    String msg
+    if ( e.causes[0] instanceof TimeoutStepExecution.ExceededTimeout ) {
+        msg = 'NOT_BUILT: aborted by timeout'
+        currentBuild.result = 'NOT_BUILT'
+    } else if ( e.causes[0] instanceof CauseOfInterruption.UserInterruption ) {
+        User user = e.causes[0]?.user
+        println "${user.fullName} : ${user.absoluteUrl}"
+        msg = "ABORTED : by user : ${user.displayName} [ ${user.id} ]"
+        currentBuild.result = 'ABORTED'
+    }
+    println "${msg}"
+    currentBuild.description = msg
+
+  } catch ( Throwable e ) {
+
+    def sw = new StringWriter()
+    e.printStackTrace(new PrintWriter(sw))
+    println sw.toString()
+    throw e
+
+  }
+} // autoAccept
+
+def autoAccept( Closure body ) {
+  try {
+    body()
+  } catch ( org.jenkinsci.plugins.scriptsecurity.sandbox.RejectedAccessException e ) {
+    String msg = "NOT_BUILT : interrupted by approval scripts or signature"
+    def cause = { msg as String } as CauseOfInterruption
+    currentBuild.rawBuild.executor.interrupt( Result.NOT_BUILT, cause )
+    currentBuild.description = msg
+    build wait: false, job: '/marslo/scriptApproval'
+  }
+}
+
+// vim: ft=Jenkinsfile ts=2 sts=2 sw=2 et

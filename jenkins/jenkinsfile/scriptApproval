@@ -1,0 +1,66 @@
+#!/usr/bin/env groovy
+// ============================================================================
+//      FileName : scriptApproval
+//        Author : marslo
+//       Created : 2022-08-05 18:11:22
+//    LastChange : 2022-08-05 20:06:11
+// ============================================================================
+
+@Library('libs') _
+import org.jenkinsci.plugins.scriptsecurity.scripts.ScriptApproval
+
+timestamps { ansiColor('xterm') {
+
+    def requester      = metadata.requesterOf( currentBuild.rawBuild )
+    String requesterId = requester?.id ?: 'jenkins'
+    final List<String> description = []
+
+    try {
+
+      ScriptApproval scriptApproval = ScriptApproval.get()
+      final LinkedHashSet<String> pendingScripts    = new HashSet<>(Arrays.asList( scriptApproval.getPendingScripts() )).flatten()
+      final LinkedHashSet<String> pendingSignature  = new HashSet<>(Arrays.asList( scriptApproval.getPendingSignatures() )).flatten()
+
+      if ( ! pendingScripts && ! pendingSignature ) util.showNotBuilt( 'NOT_BUILT: nothing can be approved.', false )
+
+      if ( pendingScripts ) {
+        println "scripts pending approval ..."
+        pendingScripts.collect().each { ps ->
+          String log = "${ps.context.user}@${ps.context.item.fullName} : ${ps.hash} ( ${ps.language.class.simpleName} )"
+          description << log
+          color.echo ( 'darkGreen', "~~> ${log}" )
+          color.echo ( "scripts: \n ${ps.script}" )
+          scriptApproval.approveScript( ps.hash )
+          scriptApproval.save()
+        }
+      } // pendingScripts
+
+      if ( pendingSignature ) {
+        println "signatures pending approval ..."
+        pendingSignature.collect().each { ps ->
+          String signature = ps.signature
+          if ( ! ps.dangerous ) {
+            description << signature
+            color.echo ( 'darkGreen', "~~> '${signature}'" )
+            scriptApproval.approveSignature( signature )
+          } else {
+            color.echo ( 'magenta', "~~> '${signature}' is too dangerous to be approval automatically. contact with Jenkins administrator." )
+          }
+          scriptApproval.save()
+        }
+      }
+
+    } catch(e) {
+      errors.echoStackTrace(e)
+      throw e
+    } finally {
+      if ( description ) util.showDesc( "@${requesterId} " +
+                                        "${buildResults.isSuccess(currentBuild.currentResult) ? 'successful' : 'failed to'} " +
+                                        "approved : '${description.join('; ')}'",
+                                        false
+                         )
+    } // try/catch/finally
+
+}} // ansiColor | timestamps
+
+// vim: ft=Jenkinsfile ts=2 sts=2 sw=2 et

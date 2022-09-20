@@ -1,0 +1,109 @@
+#!/usr/bin/env groovy
+// ============================================================================
+//      FileName : pipelineStatus
+//        Author : marslo
+//       Created : 2022-08-01 21:49:17
+//    LastChange : 2022-08-01 21:49:17
+// ============================================================================
+
+@Library('libs') _
+
+import jenkins.*
+import jenkins.model.*
+import hudson.*
+import hudson.model.*
+import hudson.matrix.*
+import com.cloudbees.hudson.plugins.*
+
+final List<String> SANDBOX  = [ 'archived', 'deprecated', 'sandbox', 'marslo' ]
+final List<String> UTILITY  = [ 'devops', 'enabling', 'generic', 'monitor' ]
+final List<String> PROJECTS = Jenkins.instance
+                                     .getAllItems( folder.Folder.class )
+                                     .findAll { ! it.fullName.contains('/') }
+                                     .collect { it.fullName } - UTILITY - SANDBOX
+final List<String> ITEMS    = Jenkins.instance
+                                     .getAllItems( Job.class )
+                                     .findAll { ! ( it instanceof MatrixProject ) &&
+                                                ! ( it instanceof MatrixConfiguration ) &&
+                                                PROJECTS.any{ j -> it.fullName.startsWith(j) }
+                                              }
+                                     .collect { it.fullName.split('/').last() }.unique()
+
+final Map<String, String> DESCRIPTIONS = [
+  pipelines : "for production projects only. if not selected, mean ALL pipelines in '${PROJECTS.join("', '")}'" ,
+     enable : "ignore <code>enable</code> when <code>check</code> is checked. <ul color='list-color-type: none;'><li>&#9745; : to enable all selected pipelines</li><li>&#9634; : to disable all selected pipelines</li></ul>" ,
+      check : 'check pipeline status only' ,
+       jobs : """<h2>to enable or disable pipelines</h2>
+                 disable/enable <i>particular pipelines</i> when <code>projects</code> are one or more of below production PROJECTS.<br>If pipeline is <b>empty</b>, disable/enable <color color="color:red"><b>ALL</b></color> pipelines/jobs under these projects by default :
+                 <ul><li><code>'${PROJECTS.join("'</code></li><li><code>'")}'</code></li></ul><br>
+                 disable/enable <color color="color:red"><b>ALL</b></color> pipelines/jobs when <code>projects</code> is one or more of sandbox projects: <ul><li><code>'${SANDBOX.join("'</code></li><li><code>'")}'</code></li></ul>
+             """
+]
+
+job.setDescription( DESCRIPTIONS.jobs.stripIndent() )
+properties([
+  parameters([
+    prop.createSimpleCheckboxParameter ( 'projects'  , PROJECTS.sort() + SANDBOX.sort() ) ,
+    prop.createSimpleCheckboxParameter ( 'pipelines' , ITEMS , DESCRIPTIONS.pipelines ) ,
+    prop.createBooleanParameter ( 'enable' , DESCRIPTIONS.enable , true ) ,
+    prop.createBooleanParameter ( 'check'  , DESCRIPTIONS.check  , true )
+  ])
+])
+
+if ( ! params.pipelines && ! params.projects ) util.showError( "ERROR: projects and pipelines cannot be empty at the same time !", false )
+def requester      = metadata.requesterOf( currentBuild.rawBuild )
+String requesterId = requester?.id ?: 'jenkins'
+
+timestamps { ansiColor('xterm') {
+
+  final List<String> PIPELINES     = params.pipelines.tokenize( ',' )
+  final List<String> ALL_PROPERTS  = params.projects.tokenize ( ',' )
+  final List<String> PROD_PROJECTS = ALL_PROPERTS - SANDBOX
+  final List<String> DEV_PROJECTS  = ALL_PROPERTS - PROD_PROJECTS
+  final List<String> results       = []
+  if ( ! PIPELINES && PROD_PROJECTS ) color.echo( 'red',
+                                                  'WARNNING: params.pipelines is empty !! ' +
+                                                  "${params.check ? 'show' : params.enable ? 'enable' : 'disable'} all pipelines under projects : '${PROD_PROJECTS.join("' ,'")}'"
+                                      )
+    try {
+      Jenkins.instance
+             .getAllItems( Job.class )
+             .findAll {
+                        List products = PROD_PROJECTS ?: PROJECTS
+                        (
+                          PIPELINES
+                            ? products.any{ p -> it.fullName.startsWith(p) } && PIPELINES.any{ p -> it.fullName.endsWith(p) }
+                            : PROD_PROJECTS.any{ p -> it.fullName.startsWith(p) }
+                        ) || (
+                          DEV_PROJECTS.any{ p -> it.fullName.startsWith(p) }
+                        )
+                      }
+             .each {
+               String status = it.disabled ? 'disabled' : 'enabled'
+               String style  = it.disabled ? 'magenta'  : 'darkGreen'
+               String name   = it.fullName
+               if ( params.check ) {
+                 color.echo ( style,   "~~> ${name} is '${status}'" )
+               } else {
+                 if ( it.disabled == params.enable ) {
+                   println color.show([ "~~> ${name} was '" : 'lightGray', "${status}" : style, "'" : 'lightGray' ])
+                   results << name
+                   it.disabled = ! params.enable
+                   it.save()
+                   color.echo ( it.disabled ? 'magenta' : 'darkGreen', "~~> ${env.JENKINS_URL}job/${name.split('/').join('/job/')} now is '${it.disabled ? 'disabled' : 'enabled'}'" )
+                 } else {
+                   println color.show([ "~~> SKIP : ${name} has already been set to '" : 'lightGray', "${status}" : style , "'" : 'lightGray' ])
+                 }
+               }
+             }
+
+    } catch(e) {
+      errors.echoStackTrace(e)
+      throw e
+    } finally {
+      if ( results ) util.showDesc( "'${results.join("', '")}' have been ${params.enable ? 'enabled' : 'disabled'} by @${requesterId}", false )
+    } // try/catch/finally
+
+}} // ansiColor | timestamps
+
+// vim: ft=Jenkinsfile ts=2 sts=2 sw=2 et
