@@ -1,0 +1,69 @@
+Map<String, List<String>> allCases = [
+  scenario_A : [ 'case_A'           ] ,
+  scenario_B : [ 'case_B', 'case_C' ]
+]
+
+tasks = allCases.collectMany { it.value.collect{ v -> "${it.key}-${v}" } }
+                .collectEntries {
+                     String scenario = it.split('-').first()
+                     String c = it.split('-').last()
+                     String sn = scenario + ': ' + c
+                     Closure task = {
+                                      stage(sn) {
+                                        println """
+                                                  scenario : ${scenario}
+                                                      case : ${c}
+                                                """
+                                      }
+                                    }
+                     [ (sn), task ]
+                }
+parallel tasks
+
+
+// or
+Map<String, List<String>> allCases = [
+  scenario_A : [ 'case_A'           ] ,
+  scenario_B : [ 'case_B', 'case_C' ]
+]
+Map runCases = [:]
+
+allCases.each { scenario, cases ->
+  runCases += cases.collectEntries { c ->
+                String sn = scenario + ': ' + c
+                Closure task = {
+                                 stage(sn) {
+                                   println """
+                                             scenario : ${scenario}
+                                                 case : ${c}
+                                           """
+                                 }
+                               }
+                [ (sn) : task ]
+              }
+}
+parallel runCases
+
+// or
+Map<String, List<String>> allCases = [
+  scenario_A : [ 'case_A'           ] ,
+  scenario_B : [ 'case_B', 'case_C' ]
+]
+Map runCases = [:]
+
+allCases.each { scenario, cases ->
+  runCases += cases.collectEntries { c ->
+                String sn = scenario + ': ' + c
+                [
+                  ( sn ) : {
+                             stage(sn) {
+                               println """
+                                         scenario : ${scenario}
+                                             case : ${c}
+                                       """
+                             }
+                           }
+                ]
+              }
+}
+parallel runCases
