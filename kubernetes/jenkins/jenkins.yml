@@ -1,0 +1,235 @@
+# pvc
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: devops-jenkins-nfs-pv
+spec:
+  capacity:
+    storage: 500Gi
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    server: 10.69.108.180
+    path: "/dc5_ssdfw3_vol/jenkins/devops-jenkins"
+
+# pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: devops-jenkins-nfs-pvc
+  namespace: devops
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  resources:
+    requests:
+      storage: 500Gi
+
+# sa
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    k8s-app: devops-jenkins
+  name: devops-jenkins-admin
+  namespace: devops
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: RoleBinding
+metadata:
+  name: devops-jenkins-admin
+  namespace: devops
+  labels:
+    k8s-app: devops-jenkins
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: edit
+subjects:
+- kind: ServiceAccount
+  name: devops-jenkins-admin
+  namespace: devops
+
+# deployment
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: devops-jenkins
+  name: devops-jenkins
+  namespace: devops
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: devops-jenkins
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: devops-jenkins
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - devops-controller-01
+                - devops-controller-02
+      containers:
+      - env:
+        - name: JAVA_OPTS
+          value: -Xms8G
+                 -Xmx16G
+                 -XX:+UseG1GC
+                 -Duser.timezone='America/Los_Angeles'
+                 -Dhudson.model.DirectoryBrowserSupport.CSP=""
+                 -Djenkins.slaves.NioChannelSelector.disabled=true
+                 -Djenkins.slaves.JnlpSlaveAgentProtocol3.enabled=false
+                 -Djava.awt.headless=true
+                 -Djenkins.security.ClassFilterImpl.SUPPRESS_WHITELIST=true
+                 -Dhudson.model.ParametersAction.keepUndefinedParameters=true
+                 -Dcom.cloudbees.workflow.rest.external.ChangeSetExt.resolveCommitAuthors=true
+                 -Djenkins.install.runSetupWizard=true
+                 -Dpermissive-script-security.enabled=true
+                 -DsessionTimeout=1440
+                 -DsessionEviction=43200
+                 -Dorg.eclipse.jetty.server.Request.maxFormContentSize=5000000
+                 -Dgroovy.grape.report.downloads=true
+                 -Divy.message.logger.level=4
+                 -XX:+AlwaysPreTouch
+                 -XX:+HeapDumpOnOutOfMemoryError
+                 -XX:+UseG1GC
+                 -XX:+UseStringDeduplication
+                 -XX:+UseCompressedClassPointers
+                 -XX:+UseCompressedOops
+                 -XX:+ParallelRefProcEnabled
+                 -XX:+ExplicitGCInvokesConcurrent
+                 -XX:MetaspaceSize=500M
+                 -XX:+UnlockDiagnosticVMOptions
+                 -XX:+UnlockExperimentalVMOptions
+                 -XX:G1NewSizePercent=20
+                 -XX:+LogVMOutput
+                 -XX:InitialRAMPercentage=50.0
+                 -XX:MaxRAMPercentage=50.0
+                 -XX:+PrintGC
+                 -XX:+PrintGCDetails
+                 -XX:HeapDumpPath=/var/jenkins_home/logs
+                 -XX:ErrorFile=/var/jenkins_home/logs/hs_err_%p.log
+                 -Xloggc:/var/jenkins_home/logs/gc.log
+                 -XX:LogFile=/var/jenkins_home/logs/jvm.log
+                 -Xlog:gc*=info,gc+heap=debug,gc+ref*=debug,gc+ergo*=trace,gc+age*=trace:file=/var/jenkins_home/logs/gc-%t.log:utctime,pid,level,tags:filecount=2,filesize=100M
+        - name: JNLP_PROTOCOL_OPTS
+          value: -Dorg.jenkinsci.remoting.engine.JnlpProtocol3.disabled=false
+        image: jenkins/jenkins:2.401.1-lts-jdk11
+        imagePullPolicy: IfNotPresent
+        name: devops-jenkins
+        ports:
+        - name: http-port
+          containerPort: 8080
+          protocol: TCP
+        - name: jnlp-port
+          containerPort: 50000
+          protocol: TCP
+        - name: cli-port
+          containerPort: 38238
+          protocol: TCP
+        volumeMounts:
+        - mountPath: /var/jenkins_home
+          name: devops-jenkins-home
+        - mountPath: /var/run/docker.sock
+          name: docker-sock
+        - mountPath: /usr/bin/docker
+          name: docker
+      restartPolicy: Always
+      volumes:
+      - name: devops-jenkins-home
+        persistentVolumeClaim:
+          claimName: devops-jenkins-nfs-pvc
+      - name: docker-sock
+        hostPath:
+          path: /var/run/docker.sock
+      - name: docker
+        hostPath:
+          path: /usr/bin/docker
+      serviceAccount: devops-jenkins-admin
+
+# svc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: devops-jenkins
+  namespace: devops
+spec:
+  type: ClusterIP
+  ports:
+    - name: jenkins-http
+      port: 8080
+      protocol: TCP
+      targetPort: http-port
+  selector:
+    app: devops-jenkins
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: devops-jenkins-discovery
+  namespace: devops
+spec:
+  type: NodePort
+  externalTrafficPolicy: Cluster
+  ports:
+    - name: jenkins-agent
+      protocol: TCP
+      port: 30380
+      targetPort: jnlp-port
+    - name: cli-agent
+      protocol: TCP
+      port: 38238
+      targetPort: cli-port
+  selector:
+    app: devops-jenkins
+
+# ingeress
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: devops-jenkins
+  namespace: devops
+  annotations:
+    ingress.kubernetes.io/ssl-redirect: "true"
+    ingress.kubernetes.io/whitelist-x-forwarded-for: "false"
+    kubernetes.io/ingress.class: traefik
+    traefik.ingress.kubernetes.io/frontend-entry-points: https,http
+    traefik.ingress.kubernetes.io/redirect-entry-point: https
+    traefik.ingress.kubernetes.io/redirect-permanent: "true"
+  labels:
+    app: devops-jenkins
+spec:
+  rules:
+  - host: devops.marslo.com
+    http:
+      paths:
+      - backend:
+          serviceName: devops-jenkins
+          servicePort: jenkins-http
+        path: /
+  tls:
+  - hosts:
+    - devops.marslo.com
+    secretName: tls
+status:
+  loadBalancer: {}
