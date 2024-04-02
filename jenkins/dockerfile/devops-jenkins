@@ -1,0 +1,29 @@
+ARG TAG=2.426.3-lts-jdk11
+FROM jenkins/jenkins:${TAG}
+
+LABEL maintainer="marslo.jiao@gmail.com"
+LABEL description="jenkins v${TAG} with plugin pre-installed"
+
+ENV DEBIAN_FRONTEND noninteractive
+ENV JOBDSL_DEFAULT_JOB_DISABLED=False
+
+USER root
+COPY --chown=jenkins:jenkins plugin.txt /usr/share/jenkins/ref/plugins.txt
+
+# hadolint ignore=DL3008
+RUN dpkg --add-architecture i386 \
+    && apt-get update -y \
+    && apt-get install -y --no-install-recommends vim \
+    && apt-get -y autoremove && apt-get -y clean \
+    && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
+
+USER jenkins
+
+# plugin downlaoded into /usr/share/jenkins/ref/plugins
+RUN jenkins-plugin-cli -f /usr/share/jenkins/ref/plugins.txt
+WORKDIR /var/jenkins_home
+
+# @see https://github.com/jenkinsci/docker/blob/master/11/debian/bookworm/hotspot/Dockerfile#L122
+ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/bin/jenkins.sh"]
+
+# vim: filetype=dockerfile
