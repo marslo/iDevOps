@@ -90,11 +90,13 @@ spec:
       containers:
       - env:
         - name: JAVA_OPTS
-          value: -Xms8G
-                 -Xmx16G
-                 -XX:+UseG1GC
-                 -Duser.timezone='America/Los_Angeles'
-                 -Dhudson.model.DirectoryBrowserSupport.CSP=""
+          value: -Dhttp.proxyHost=proxy.domain.com
+                 -Dhttp.proxyPort=8080
+                 -Dhttps.proxyHost=proxy.domain.com
+                 -Dhttps.proxyPort=8080
+                 -Dhttp.nonProxyHosts=localhost^|127.0.0.1^|*.domain.com
+                 -Duser.timezone=America/Los_Angeles
+                 -Dhudson.model.DirectoryBrowserSupport.CSP=
                  -Djenkins.slaves.NioChannelSelector.disabled=true
                  -Djenkins.slaves.JnlpSlaveAgentProtocol3.enabled=false
                  -Djava.awt.headless=true
@@ -102,34 +104,38 @@ spec:
                  -Dhudson.model.ParametersAction.keepUndefinedParameters=true
                  -Dcom.cloudbees.workflow.rest.external.ChangeSetExt.resolveCommitAuthors=true
                  -Djenkins.install.runSetupWizard=true
-                 -Dpermissive-script-security.enabled=true
+                 -Dpermissive-script-security.enabled=no_security
                  -DsessionTimeout=1440
                  -DsessionEviction=43200
-                 -Dorg.eclipse.jetty.server.Request.maxFormContentSize=5000000
                  -Dgroovy.grape.report.downloads=true
                  -Divy.message.logger.level=4
+                 -Dhudson.plugins.active_directory.ActiveDirectorySecurityRealm.forceLdaps=false
+                 -Dfile.encoding=UTF-8
+                 -Dsun.jnu.encoding=utf-8
+                 -Djenkins.model.Jenkins.logStartupPerformance=true
+                 -Dhudson.security.csrf.DefaultCrumbIssuer.EXCLUDE_SESSION_ID=true
+                 -Dhudson.lifecycle=hudson.lifecycle.ExitLifecycle
+                 -Djsch.client_pubkey=ssh-rsa,ssh-ed25519,ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521,rsa-sha2-512,rsa-sha2-256
+                 -Djsch.server_host_key=ssh-rsa,ssh-ed25519,ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521,rsa-sha2-512,rsa-sha2-256
+                 -Djenkins.slaves.JnlpSlaveAgentProtocol3.ALLOW_UNSAFE=tue
                  -XX:+AlwaysPreTouch
                  -XX:+HeapDumpOnOutOfMemoryError
                  -XX:+UseG1GC
                  -XX:+UseStringDeduplication
-                 -XX:+UseCompressedClassPointers
-                 -XX:+UseCompressedOops
                  -XX:+ParallelRefProcEnabled
+                 -XX:+DisableExplicitGC
                  -XX:+ExplicitGCInvokesConcurrent
-                 -XX:MetaspaceSize=500M
                  -XX:+UnlockDiagnosticVMOptions
                  -XX:+UnlockExperimentalVMOptions
-                 -XX:G1NewSizePercent=20
                  -XX:+LogVMOutput
-                 -XX:InitialRAMPercentage=50.0
-                 -XX:MaxRAMPercentage=50.0
-                 -XX:+PrintGC
-                 -XX:+PrintGCDetails
+                 -XX:InitialRAMPercentage=75.0
+                 -XX:MaxRAMPercentage=75.0
                  -XX:HeapDumpPath=/var/jenkins_home/logs
                  -XX:ErrorFile=/var/jenkins_home/logs/hs_err_%p.log
-                 -Xloggc:/var/jenkins_home/logs/gc.log
+                 -verbose:gc
+                 -Xlog:gc
+                 -Xlog:gc*
                  -XX:LogFile=/var/jenkins_home/logs/jvm.log
-                 -Xlog:gc*=info,gc+heap=debug,gc+ref*=debug,gc+ergo*=trace,gc+age*=trace:file=/var/jenkins_home/logs/gc-%t.log:utctime,pid,level,tags:filecount=2,filesize=100M
         - name: JNLP_PROTOCOL_OPTS
           value: -Dorg.jenkinsci.remoting.engine.JnlpProtocol3.disabled=false
         image: jenkins/jenkins:2.401.1-lts-jdk11
