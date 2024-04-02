@@ -1,0 +1,52 @@
+#!/usr/bin/env groovy
+
+podTemplate( cloud: 'DevOps Kubernetes',
+             namespace: 'devops',
+             nodeSelector: 'jenkins.builder/loc=dc5',
+             containers: [
+               containerTemplate(
+                 name: 'maven',
+                 image: 'maven:3.3.9-jdk-8-alpine',
+                 ttyEnabled: true,
+                 command: 'cat',
+                 resourceRequestCpu: '256m',
+                 resourceLimitCpu: '512m',
+                 resourceRequestMemory: '512Mi',
+                 resourceLimitMemory: '1024Mi'
+               ),
+               containerTemplate(
+                 name: 'golang',
+                 image: 'golang:1.8.0',
+                 ttyEnabled: true,
+                 command: 'cat',
+                 resourceRequestCpu: '256m',
+                 resourceLimitCpu: '512m',
+                 resourceRequestMemory: '512Mi',
+                 resourceLimitMemory: '1024Mi'
+               ),
+               containerTemplate(
+                 name: 'jnlp',
+                 image: 'jenkins/inbound-agent',
+                 ttyEnabled: true,
+                 resourceRequestCpu: '256m',
+                 resourceLimitCpu: '512m',
+                 resourceRequestMemory: '512Mi',
+                 resourceLimitMemory: '1024Mi'
+               )
+             ]
+) {
+    node(POD_LABEL) {
+      stage('maven') {
+        container('maven') {
+          sh """ which -a mvn """
+        }
+      }
+      stage('golang') {
+        container('golang') {
+          sh """ which -a go """
+        }
+      }
+    }
+}
+
+// vim:tabstop=2:softtabstop=2:shiftwidth=2:expandtab:filetype=Groovy

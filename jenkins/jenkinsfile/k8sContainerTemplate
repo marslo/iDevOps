@@ -1,5 +1,6 @@
-// https://issues.jenkins-ci.org/browse/JENKINS-60343
+#!/usr/bin/env groovy
 
+// https://issues.jenkins-ci.org/browse/JENKINS-60343
 podTemplate(cloud: 'My Kubernetes', containers: [
   containerTemplate(
     name: 'jnlp',
@@ -25,3 +26,5 @@ podTemplate(cloud: 'My Kubernetes', containers: [
     }
   }
 }
+
+// vim:tabstop=2:softtabstop=2:shiftwidth=2:expandtab:filetype=Groovy
