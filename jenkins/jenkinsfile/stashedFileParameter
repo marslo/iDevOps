@@ -1,0 +1,44 @@
+#!/usr/bin/env groovy
+
+import groovy.transform.Field
+
+final List props     = []
+final List newParams = []
+newParams += [ $class: 'StashedFileParameterDefinition' , name: 'jsonFile', description: 'to upload file' ]
+props     += [ $class: 'ParametersDefinitionProperty'   , parameterDefinitions: newParams                 ]
+properties( properties: props )
+// or
+// properties([ parameters([ stashedFile('FILE') ]) ])
+
+/******************************************************************************
+ * FUNCTIONS
+******************************************************************************/
+/**
+ * get the original filename who was uploaded via File Parameter
+ *
+ * @param name      the parameter name
+ * @see             <a href="https://plugins.jenkins.io/file-parameters/">File Parameter</a>
+**/
+String getFilename( String name ) {
+  env.getEnvironment().find { "${name}_FILENAME" == it.key }?.value ?: ''
+}
+
+/**
+ * unstash the file who was uploaded via File Parameter
+ *
+ * @param name      the parameter name
+ * @see             <a href="https://plugins.jenkins.io/file-parameters/">File Parameter</a>
+**/
+Boolean unstashFile( String name ) {
+  String filename = getFilename( name )
+  if ( filename ) {
+    unstash "${name}"
+    sh """ set +x; mv "${name}" ${filename} """
+    return util.fileFinder( filename, 0 ) && true
+  } else {
+    color.alert( '... no uploaded file found ...' )
+    return false
+  }
+}
+
+// vim:tabstop=2:softtabstop=2:shiftwidth=2:expandtab:filetype=Jenkinsfile

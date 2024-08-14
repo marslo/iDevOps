@@ -1,0 +1,67 @@
+#!/usr/bin/env groovy
+
+import groovy.transform.Field
+import static groovy.json.JsonOutput.*
+
+def createCascadeChoiceDefinition( String name        ,
+                                   String groovy      ,
+                                   String fallback    ,
+                                   String description ,
+                                   String choiceType  ,
+                                   String reference = ''
+) {
+  List<String> choiceTypes = [ 'PT_SINGLE_SELECT', 'PT_MULTI_SELECT', 'PT_RADIO', 'PT_CHECKBOX' ]
+  if ( ! choiceTypes.contains(choiceType) ) util.showError( "choiceType MUST be one of ${choiceTypes}.join(', ') !" )
+  fallback = fallback ?: "return ['script error !']"
+
+  [
+                  $class : 'CascadeChoiceParameter' ,
+              choiceType : choiceType        ,
+            filterLength : 1                 ,
+              filterable : false             ,
+                    name : name              ,
+             description : description       ,
+    referencedParameters : reference         ,
+                  script : [
+                             $class         : 'GroovyScript'   ,
+                             fallbackScript : [ sandbox : true , script : fallback ] ,
+                             script         : [ sandbox : true , script : groovy   ]
+                           ]
+  ]
+}
+
+def generateParameterDefinitions() {
+  final List newParams = []
+  final List props     = []
+  String fallback      = "return ['script error !']"
+  String states        = """
+                          Map<String, List<String>> map = [
+                            'CA:selected' : [ 'Los Angeles' , 'San Diego'   , 'San Francisco:selected' ] ,
+                            'NY'          : [ 'New York'    , 'Hempstead'                              ] ,
+                            'TX'          : [ 'Houston'     , 'San Antonio' , 'Dallas'                 ]
+                          ]
+                          return map.keySet().toList()
+                         """.stripIndent()
+  String cities        = """
+                          Map<String, List<String>> map = [
+                            'CA:selected' : [ 'Los Angeles' , 'San Diego'   , 'San Francisco:selected' ] ,
+                            'NY'          : [ 'New York'    , 'Hempstead'                              ] ,
+                            'TX'          : [ 'Houston'     , 'San Antonio' , 'Dallas'                 ]
+                          ]
+                           return states.split(',').collect { e ->
+                             map.find{ it.key.startsWith(e) }.value.collect{ "\${e}:\${it}".toString() }
+                           }.flatten()
+                         """.stripIndent()
+
+  newParams += createCascadeChoiceDefinition( 'states' , states , fallback , '' , 'PT_CHECKBOX'           )
+  newParams += createCascadeChoiceDefinition( 'cities' , cities , fallback , '' , 'PT_CHECKBOX', 'states' )
+
+  props += [ $class: 'ParametersDefinitionProperty' , parameterDefinitions: newParams ]
+  properties( properties: props )
+}
+
+generateParameterDefinitions()
+
+println prettyPrint(toJson( params.collect { "${it.key} ~~> ${it.value}" } ))
+
+// vim:tabstop=2:softtabstop=2:shiftwidth=2:expandtab:filetype=Groovy

@@ -1,0 +1,75 @@
+#!/usr/bin/env groovy
+
+import groovy.transform.Field
+import static groovy.json.JsonOutput.*
+
+def createDynamicReferenceDefinition( String name        ,
+                                      String reference   ,
+                                      String groovy      ,
+                                      String fallback    ,
+                                      String description ,
+                                      String choiceType  ,
+                                      Boolean omit
+) {
+  List<String> choiceTypes = [ 'ET_TEXT_BOX', 'ET_ORDERED_LIST', 'ET_UNORDERED_LIST',  'ET_FORMATTED_HTML', 'ET_FORMATTED_HIDDEN_HTML' ]
+  if ( ! choiceTypes.contains(choiceType) ) util.showError( "choiceType MUST be one of ${choiceTypes}.join(', ') !" )
+
+  [
+                  $class : 'DynamicReferenceParameter' ,
+              choiceType : choiceType                  ,
+                    name : name                        ,
+          omitValueField : omit                        ,
+    referencedParameters : reference                   ,
+             description : description                 ,
+                  script : [
+                             $class         : 'GroovyScript'   ,
+                             fallbackScript : [ sandbox : true , script : fallback ] ,
+                             script         : [ sandbox : true , script : groovy   ]
+                           ]
+  ]
+}
+
+def createDynamicReferenceDefinition( String name, String reference, String groovy, String fallback, String description, String choiceType ) {
+  createDynamicReferenceDefinition( name, reference, groovy, fallback, description, choiceType, true )
+}
+
+def generateParameterDefinitions() {
+  final List newParams = []
+  final List props     = []
+  String fallback      = "return ['script error !']"
+  String releaseId     = """
+                           import java.time.LocalDateTime
+                           import java.time.format.DateTimeFormatter
+
+                           LocalDateTime ld = LocalDateTime.now()
+                           String version = ld.format( DateTimeFormatter.ofPattern('yy.MM') )
+                           String defaultValue = "v\${version}"
+
+                           return "<input name='value' placeholder value='\${defaultValue}' class='jenkins-input' type='text'>"
+                         """.stripIndent()
+  String today         = """
+                           import java.time.LocalDateTime
+                           import java.time.format.DateTimeFormatter
+
+                           LocalDateTime ld = LocalDateTime.now()
+                           String today = ld.format( DateTimeFormatter.ofPattern('YYYY-MM-dd') )
+                           return "<input name='value' value='\${today}' class='setting-input' type='text'>"
+                         """.stripIndent()
+  String path          = """
+                           String defaultValue = "\${today}/\${releaseId}"
+                           return "<input name='value' placeholder='MANDATORY: example format: `&lt;YYYY-MM-dd&gt;/&lt;yy.MM&gt;`' value='\${defaultValue}' class='setting-input' type='text'>"
+                         """.stripIndent()
+
+  newParams += createDynamicReferenceDefinition( 'releaseId' , ''                , releaseId , fallback , '' , 'ET_FORMATTED_HTML'        )
+  newParams += createDynamicReferenceDefinition( 'today'     , ''                , today     , fallback , '' , 'ET_FORMATTED_HIDDEN_HTML' )
+  newParams += createDynamicReferenceDefinition( 'path'      , 'releaseId,today' , path      , fallback , '' , 'ET_FORMATTED_HTML'        )
+
+  props += [ $class: 'ParametersDefinitionProperty' , parameterDefinitions: newParams ]
+  properties( properties: props )
+}
+
+generateParameterDefinitions()
+
+println prettyPrint(toJson( params.collect { "${it.key} ~~> ${it.value}" } ))
+
+// vim:tabstop=2:softtabstop=2:shiftwidth=2:expandtab:filetype=Groovy
