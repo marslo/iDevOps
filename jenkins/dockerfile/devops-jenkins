@@ -2,7 +2,8 @@ ARG TAG=2.426.3-lts-jdk11
 FROM jenkins/jenkins:${TAG}
 
 LABEL maintainer="marslo.jiao@gmail.com"
-LABEL description="jenkins v${TAG} with plugin pre-installed"
+LABEL description="jenkins v${TAG} with plugin pre-installed; \
+  release notes: https://ewiki.marvell.com/x/AclwBg"
 
 ENV DEBIAN_FRONTEND noninteractive
 ENV JOBDSL_DEFAULT_JOB_DISABLED=False
@@ -20,7 +21,11 @@ RUN dpkg --add-architecture i386 \
 USER jenkins
 
 # plugin downlaoded into /usr/share/jenkins/ref/plugins
-RUN jenkins-plugin-cli -f /usr/share/jenkins/ref/plugins.txt
+RUN jenkins-plugin-cli -f /usr/share/jenkins/ref/plugins.txt \
+    && curl --create-dirs -o /usr/share/jenkins/ref/plugins/confluence-publisher.jpi -fsSL https://artifactory.marvell.com/artifactory/storage-ff-devops-local/jenkins/plugins/confluence-publisher.jpi \
+    && mkdir -p /var/jenkins_home/.ssh
+COPY --chown=jenkins:jenkins config /var/jenkins_home/.ssh/config
+VOLUME /var/jenkins_home/.ssh
 WORKDIR /var/jenkins_home
 
 # @see https://github.com/jenkinsci/docker/blob/master/11/debian/bookworm/hotspot/Dockerfile#L122

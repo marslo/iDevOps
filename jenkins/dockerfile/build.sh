@@ -31,20 +31,22 @@ fi
 
 # build
 revsion="$(git rev-parse --short HEAD)"
+revCount="$(git rev-list --count "${revsion}" --first-parent)"
+version="v${revCount}-${revsion}"
 image='artifactory.marvell.com/storage-ff-docker-local/devops/jenkins'
 docker build --no-cache \
              --force-rm \
              --build-arg TAG="${tag}" \
-             -t "${image}:${tag}-${revsion}" \
+             -t "${image}:${tag}-${version}" \
              -f devops-jenkins .
 
 # clean remote image if necessary
 [[ 'true' = "${remoteClr}" ]] &&
   command -v jf >/dev/null &&
-  jf rt delete --quiet "${image}/${tag}-${revsion}"/**
+  jf rt delete --quiet "${image}/${tag}-${version}"/**
 
 # publish
-docker push "${image}:${tag}-${revsion}"
-echo ">> ${image}:${tag}-${revsion} has been published."
+docker push "${image}:${tag}-${version}"
+echo -e ">> \033[33;3m${image}:${tag}-${version}\033[0m has been published."
 
 # vim:tabstop=2:softtabstop=2:shiftwidth=2:expandtab:filetype=sh:foldmethod=marker
