@@ -1,0 +1,151 @@
+apiVersion: kubeadm.k8s.io/v1beta3
+kind: InitConfiguration
+localAPIEndpoint:
+  advertiseAddress: 10.68.78.221
+  bindPort: 6443
+nodeRegistration:
+  name: "dc5lt-ssdfw01"
+  taints:
+  - effect: NoSchedule
+    key: node-role.kubernetes.io/control-plane
+  criSocket: unix:///var/run/crio/crio.sock
+---
+apiVersion: kubeadm.k8s.io/v1beta3
+kind: ClusterConfiguration
+clusterName: cluster.local
+etcd:
+  external:
+      endpoints:
+      - https://10.68.78.221:2379
+      - https://10.68.78.222:2379
+      - https://10.68.78.223:2379
+      caFile: /etc/ssl/etcd/ssl/ca.pem
+      certFile: /etc/ssl/etcd/ssl/node-dc5lt-ssdfw01.pem
+      keyFile: /etc/ssl/etcd/ssl/node-dc5lt-ssdfw01-key.pem
+dns:
+  imageRepository: registry.k8s.io/coredns
+  imageTag: v1.11.1
+networking:
+  dnsDomain: cluster.local
+  serviceSubnet: "172.21.0.0/16"
+  podSubnet: "10.244.0.0/16"
+kubernetesVersion: v1.30.4
+controlPlaneEndpoint: sms-k8s-api.marvell.com:16443
+certificatesDir: /etc/kubernetes/ssl
+imageRepository: registry.k8s.io
+apiServer:
+  extraArgs:
+    etcd-compaction-interval: "5m0s"
+    default-not-ready-toleration-seconds: "300"
+    default-unreachable-toleration-seconds: "300"
+    anonymous-auth: "True"
+    authorization-mode: Node,RBAC
+    bind-address: 0.0.0.0
+    apiserver-count: "3"
+    endpoint-reconciler-type: lease
+    service-node-port-range: 30000-32767
+    service-cluster-ip-range: "172.21.0.0/16"
+    kubelet-preferred-address-types: "InternalDNS,InternalIP,Hostname,ExternalDNS,ExternalIP"
+    profiling: "False"
+    request-timeout: "1m0s"
+    enable-aggregator-routing: "False"
+    service-account-lookup: "True"
+    storage-backend: etcd3
+    allow-privileged: "true"
+    event-ttl: 1h0m0s
+  extraVolumes:
+  - name: etc-pki-tls
+    hostPath: /etc/pki/tls
+    mountPath: /etc/pki/tls
+    readOnly: true
+  - name: etc-pki-ca-trust
+    hostPath: /etc/pki/ca-trust
+    mountPath: /etc/pki/ca-trust
+    readOnly: true
+  certSANs:
+  - "kubernetes"
+  - "kubernetes.default"
+  - "kubernetes.default.svc"
+  - "kubernetes.default.svc.cluster.local"
+  - "172.21.0.1"
+  - "localhost"
+  - "127.0.0.1"
+  - "dc5lt-ssdfw01"
+  - "dc5lt-ssdfw02"
+  - "dc5lt-ssdfw03"
+  - "sms-k8s-api.marvell.com"
+  - "10.68.78.205"
+  - "10.68.78.221"
+  - "10.68.78.222"
+  - "10.68.78.223"
+  - "dc5lt-ssdfw01.marvell.com"
+  - "dc5lt-ssdfw02.marvell.com"
+  - "dc5lt-ssdfw03.marvell.com"
+  timeoutForControlPlane: 5m0s
+controllerManager:
+  extraArgs:
+    node-monitor-grace-period: 40s
+    node-monitor-period: 5s
+    cluster-cidr: "10.244.0.0/16"
+    service-cluster-ip-range: "172.21.0.0/16"
+    allocate-node-cidrs: "false"
+    profiling: "False"
+    terminated-pod-gc-threshold: "12500"
+    bind-address: 0.0.0.0
+    leader-elect-lease-duration: 15s
+    leader-elect-renew-deadline: 10s
+    configure-cloud-routes: "false"
+scheduler:
+  extraArgs:
+    bind-address: 0.0.0.0
+    config: /etc/kubernetes/kubescheduler-config.yaml
+    profiling: "False"
+  extraVolumes:
+  - name: kubescheduler-config
+    hostPath: /etc/kubernetes/kubescheduler-config.yaml
+    mountPath: /etc/kubernetes/kubescheduler-config.yaml
+    readOnly: true
+---
+apiVersion: kubeproxy.config.k8s.io/v1alpha1
+kind: KubeProxyConfiguration
+bindAddress: 0.0.0.0
+clientConnection:
+  acceptContentTypes: 
+  burst: 10
+  contentType: application/vnd.kubernetes.protobuf
+  kubeconfig: 
+  qps: 5
+clusterCIDR: "10.244.0.0/16"
+configSyncPeriod: 15m0s
+conntrack:
+  maxPerCore: 32768
+  min: 131072
+  tcpCloseWaitTimeout: 1h0m0s
+  tcpEstablishedTimeout: 24h0m0s
+enableProfiling: False
+healthzBindAddress: 0.0.0.0:10256
+hostnameOverride: "dc5lt-ssdfw01"
+iptables:
+  masqueradeAll: False
+  masqueradeBit: 14
+  minSyncPeriod: 0s
+  syncPeriod: 30s
+ipvs:
+  excludeCIDRs: []
+  minSyncPeriod: 0s
+  scheduler: rr
+  syncPeriod: 30s
+  strictARP: True
+  tcpTimeout: 0s
+  tcpFinTimeout: 0s
+  udpTimeout: 0s
+metricsBindAddress: 127.0.0.1:10249
+mode: ipvs
+nodePortAddresses: []
+oomScoreAdj: -999
+portRange: 
+---
+apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+clusterDNS:
+- 172.21.0.3
