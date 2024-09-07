@@ -1,0 +1,37 @@
+---
+## Change this to use another Kubernetes version, e.g. a current beta release
+kube_version: v1.30.4
+
+# Choose network plugin (cilium, calico, kube-ovn, weave or flannel. Use cni for generic cni plugin)
+# Can also be set to 'cloud', which lets the cloud provider setup appropriate routing
+kube_network_plugin: calico
+
+# Kubernetes internal network for services, unused block of space.
+## networking.networking: "10.96.0.0/12"
+## networking.networking: "172.21.0.0/16"
+kube_service_addresses: 172.21.0.0/16
+
+# internal network. When used, it will assign IP
+## networking.networking: "10.244.0.0/16"
+kube_pods_subnet: 10.244.0.0/16
+
+# internal network node size allocation (optional). This is the size allocated
+# to each node for pod IP address allocation. Note that the number of pods per node is
+# also limited by the kubelet_max_pods variable which defaults to 110.
+kube_network_node_prefix: 24
+
+# Kube-proxy proxyMode configuration.
+# Can be ipvs, iptables
+kube_proxy_mode: ipvs
+
+# configure arp_ignore and arp_announce to avoid answering ARP queries from kube-ipvs0 interface
+# must be set to true for MetalLB, kube-vip(ARP enabled) to work
+kube_proxy_strict_arp: true
+
+# Enable nodelocal dns cache
+enable_nodelocaldns: false
+
+## Container runtime
+## docker for docker, crio for cri-o and containerd for containerd.
+## Default: containerd
+container_manager: crio

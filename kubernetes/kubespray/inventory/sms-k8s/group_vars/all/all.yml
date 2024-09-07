@@ -1,0 +1,28 @@
+---
+## Directory where the binaries will be installed
+bin_dir: /usr/local/bin
+
+
+## External LB example config
+apiserver_loadbalancer_domain_name: "sms-k8s-api.sample.com"
+loadbalancer_apiserver:
+  address: 10.68.78.205
+  port: 16443
+
+## Internal loadbalancers for apiservers
+loadbalancer_apiserver_localhost: false
+# valid options are "nginx" or "haproxy"
+# loadbalancer_apiserver_type: nginx  # valid values "nginx" or "haproxy"
+
+## Local loadbalancer should use this port
+## And must be set port 6443
+loadbalancer_apiserver_port: 6443
+
+## If loadbalancer_apiserver_healthcheck_port variable defined, enables proxy liveness check for nginx.
+loadbalancer_apiserver_healthcheck_port: 16443
+
+## NTP Settings
+# Start the ntpd or chrony service and enable it at system boot.
+ntp_enabled: enable
+ntp_servers:
+  - "10.95.8.150 iburst"
