@@ -12,6 +12,10 @@
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
+## [jenkins built-in icons](https://github.com/jenkinsci/jenkins/tree/9b15bf933fd6496f6489667de4c5d6a4c361b9b1/war/src/main/webapp/images/svgs)
+
+![jenkins built-in icons](./icon.built-in-list.png)
+
 ## [jenkins core symbols](https://github.com/jenkinsci/jenkins/tree/master/war/src/main/resources/images/symbols)
 
 ![jenkins core symbols](./symbol.jenkins-core.png)
